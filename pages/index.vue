@@ -36,20 +36,15 @@ export default {
           class: 'ml-0 subtitle-1'
         }
       }
-    }
+    };
   }
-}
+};
 </script>
 
 <style scoped>
-/* !important is used to override Vuetify's default styling */
+@import '~/assets/card.css';
 .card {
-  border-radius: 0 !important;
   background-color: #00BFFF !important;
-}
-/* Same as applying ma-5 class to all content inside of cards */
-.card * {
-  margin: 20px;
 }
 /* Expansion panel background color is the same as Vuetify's light-blue color */
 .expansion-panel {

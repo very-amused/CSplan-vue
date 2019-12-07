@@ -7,14 +7,14 @@
         v-col
           v-text-field(label="Title" :color="color" required)
           v-row
-            v-text-field(label="Time" hint="If AM or PM is not specified, this time will be interpreted as 24-hour." v-model="time.value" :value="time.value" :error-messages="timeErrors" :color="color" required @change="validateTimeFormat")
+            v-text-field(label="Time" hint="If AM or PM is not specified, this time will be interpreted as 24-hour." v-model="time.value" :value="time.value" :error-messages="errors" :color="color" required @change="validateTimeFormat")
             v-text-field(label="Date" :color="color" readonly required :value="date" append-icon="fa-calendar-alt" @click:append="toggleDatePicker")
             v-dialog(v-model="showDatePicker" max-width=500)
               v-date-picker(:color="color" v-model="date" :min="today")
                 v-icon(class="close-icon" color="white" @click="toggleDatePicker") fas fa-times
           v-textarea(label="Description (optional)" outlined no-resize rows="3" :color="color" class="mb-0")
         v-col(align="center")
-          v-btn(large :color="`${color} white--text`" class="mt-0") Create
+          v-btn(large :color="`${color} white--text`" class="mt-0" @click="submit") Create
 </template>
 
 <script>
@@ -26,7 +26,7 @@ export default {
       time: {
         value: null,
         isTwentyFourHour: null,
-        isValid: true
+        isValidFormat: true
       },
       timeDateObject: null,
 
@@ -55,8 +55,8 @@ export default {
       return d.toISOString();
       // Returns the current date at midnight (for purposes of the minimum date allowed on the date picker)
     },
-    timeErrors () {
-      if (!this.time.isValid) {
+    errors () {
+      if (!this.time.isValidFormat) {
         return 'Invalid time format.';
       }
       // Ensure timeDateObject exists before calling the getTime method on it
@@ -72,10 +72,10 @@ export default {
   watch: {
     // Update the date object (contains information on both time and calendar date)
     date () {
-      this.parseDateObject();
+      this.parseTimeDateObject();
     },
     'time.value' () {
-      this.parseDateObject();
+      this.parseTimeDateObject();
     }
   },
 
@@ -90,24 +90,24 @@ export default {
       const twentyFourHourRegex = new RegExp(/(\d|[01]\d|2[0123]):([012345]\d)$/);
       // Test the provided time against the regex
       if (twelveHourRegex.test(this.time.value)) {
-        this.time.isValid = true;
+        this.time.isValidFormat = true;
         this.time.value = this.time.value.match(twelveHourRegex)[0];
         this.time.isTwentyFourHour = false;
       }
       else if (twentyFourHourRegex.test(this.time.value)) {
-        this.time.isValid = true;
+        this.time.isValidFormat = true;
         this.time.value = this.time.value.match(twentyFourHourRegex)[0];
         this.time.isTwentyFourHour = true;
       }
       else {
         // Adjust time error if the time is invalid
-        this.time.isValid = false;
+        this.time.isValidFormat = false;
         this.time.format = null;
       }
     },
-    parseDateObject () {
+    parseTimeDateObject () {
       // Return if the time or date don't exist or are invalid
-      if (!(this.time.value && this.time.isValid && this.date)) {
+      if (!(this.time.value && this.time.isValidFormat && this.date)) {
         return;
       }
       // Parse year, month, and date
@@ -127,6 +127,16 @@ export default {
           this.timeDateObject.setHours(hours + 12);
         }
       }
+    },
+    submit () {
+      /* Only submit the form if 3 conditions are met:
+      1. There has been a time set
+      2. There has been a date set
+      3. There are no errors in the form */
+      if (!(this.time.value && this.date && !this.errors)) {
+        return;
+      }
+      // Post with axios
     }
   }
 };

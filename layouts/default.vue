@@ -1,7 +1,7 @@
 <template lang="pug">
   v-app
     v-app-bar(dark color="indigo darken-1" dense app)
-      v-toolbar-title CHplan
+      v-toolbar-title CSplan
       v-divider(dark vertical class="ml-3")
 
       v-btn(text class="font-weight-regular") My dashboard

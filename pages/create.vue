@@ -14,8 +14,8 @@
                 v-icon(class="close-icon" color="white" @click="toggleDatePicker") fas fa-times
           v-textarea(label="Description (optional)" outlined no-resize rows="3" maxlength=2000 counter v-model="fields.description" :color="color" class="mb-0")
         v-col(align="center")
-          v-btn(large :color="`${color} white--text`" class="mt-0" @click="submit") Create
-    v-snackbar(color="error" v-model="visibility.snackbar") {{ snackbarContent }}
+          v-btn(large :color="`${color} white--text`" class="mt-0 submit-button" :class="{active: animations.submit}" @click="submit") {{ buttons.submit.text }}
+            v-icon(class="mr-0" color="white" :class="{'ma-0': !buttons.submit.icon}") {{ buttons.submit.icon }}
 </template>
 
 <script>
@@ -26,6 +26,17 @@ export default {
       visibility: {
         datePicker: false,
         snackbar: false
+      },
+      // Data that triggers animations
+      animations: {
+        submit: false
+      },
+      // Data concerning the text/icons shown on buttons
+      buttons: {
+        submit: {
+          text: 'Create',
+          icon: null
+        }
       },
       // Data concerning the value of fields
       fields: {
@@ -83,21 +94,22 @@ export default {
       const splitDate = this.fields.date.split('-');
       const [year, month, date] = [...splitDate.map(i => parseInt(i))];
       // Split the time for parsing
-      const splitTime = this.fields.time(' ')[0].split(':');
+      const splitTime = this.fields.time.split(' ')[0].split(':');
       // Parse hours and minutes
       const [hours, minutes] = [...splitTime.map(i => parseInt(i))];
       const dateObj = new Date(year, month - 1, date, hours, minutes);
       // Adjust time if 12 hour time format is being used
       if (!this.formats.time.isTwentyFourHour) {
-        if (hours === 12 && this.time.value.toLowerCase().includes('am')) {
+        if (hours === 12 && this.fields.time.toLowerCase().includes('am')) {
           dateObj.setHours(hours - 12);
         }
-        else if (hours !== 12 && this.time.value.toLowerCase().includes('pm')) {
+        else if (hours !== 12 && this.fields.time.toLowerCase().includes('pm')) {
           dateObj.setHours(hours + 12);
         }
       }
-      // Set the timestamp in Unix epoch time
-      return dateObj.getTime();
+      // Return the timestamp in Unix epoch time
+      return dateObj.getTime() / 1000; /* This is divided by 1000 because JS displays Unix time in ms,
+      whereas the backend expects to receive it in seconds */
     },
     // Compute errors for the form
     errors () {
@@ -154,6 +166,7 @@ export default {
     async submit () {
       // Mark that the form has been submitted, which causes errors concerning if fields are filled out to be displayed
       this.submitButtonPressed = true;
+      console.log(this.timestamp);
       // Don't submit the form if there are errors
       for (const i in this.errors) {
         if (this.errors[i].length) {
@@ -161,15 +174,29 @@ export default {
         }
       }
       // Post with axios
-      await this.$axios.$post('https://07eef260.ngrok.io/API/create-plan', {
-        title: this.title.value,
-        timestamp: this.timestamp,
-        description: this.description
-      }, {
+      const URL = process.env.NODE_ENV === 'development' ? 'http://localhost:3000/API/create-plan' : '/API/create-plan';
+      const response = await this.$axios({
+        method: 'POST',
+        url: URL,
+        data: {
+          title: this.fields.title,
+          timestamp: this.timestamp,
+          description: this.fields.description
+        },
         headers: {
           'Content-Type': 'application/json'
         }
       });
+      if (response.status === 201) {
+        // Trigger animations
+        this.animations.submit = true;
+        this.buttons.submit.text = 'Created';
+        this.buttons.submit.icon = 'mdi-check-circle';
+        // Clear and reset the form after 1s
+        setTimeout(function () {
+          Object.assign(this.$data, this.$options.data());
+        }.bind(this), 1000);
+      }
     }
   }
 };
@@ -177,17 +204,10 @@ export default {
 
 <style scoped>
 @import '~/assets/card.css';
+@import '~/assets/submit-button.css';
 .close-icon {
   position: absolute;
   right: 1rem;
   top: 1rem;
-}
-.creation-message {
-  position: absolute;
-  bottom: 0;
-  /* The missing 0.1% is the pixel that lines the banner up
-  with the parent card after animation */
-  left: -99.9%;
-  border-radius: 0 !important;
 }
 </style>

@@ -1,0 +1,4 @@
+.submit-button.active {
+  background-color: #4DB6AC !important;
+  transition: background-color .5s !important;
+}

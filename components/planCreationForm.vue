@@ -5,27 +5,22 @@
     v-divider
     v-form
       v-col
-        v-text-field(label="Title" :color="color" v-model="fields.title" :error-messages="errors.title" required)
+        v-text-field(label="Title" :color="color" v-model="fields.title" :error-messages="errors.title" @change="trim('title')" required)
         v-row(class="mx-auto")
-          v-text-field(label="Time" hint="If AM or PM is not specified, this time will be interpreted as 24-hour." v-model="fields.time" :error-messages="errors.time" @change="validateTimeFormat" :color="color" class="w-45 " required)
+          v-text-field(label="Time" hint="If AM or PM is not specified, this time will be interpreted as 24-hour." v-model="fields.time" :error-messages="errors.time" @change="trim('time'); validateTimeFormat" :color="color" class="w-45 " required)
           v-spacer
           v-text-field(label="Date" :color="color" readonly :value="fields.date" :error-messages="errors.date" append-icon="fa-calendar-alt" @click:append="visibility.datePicker = true" class="w-45" required)
           v-dialog(v-model="visibility.datePicker" max-width=500)
             v-date-picker(:color="color" v-model="fields.date" :min="today")
               v-icon(class="close-icon" color="white" @click="toggleDatePicker") fas fa-times
-        v-textarea(label="Description (optional)" outlined no-resize rows="3" maxlength=2000 counter v-model="fields.description" :color="color" class="mb-0")
+        v-textarea(label="Description (optional)" outlined no-resize rows="3" maxlength=2000 counter v-model="fields.description" @change="trim('description')" :color="color" class="mt-5")
         v-col(align="center")
-          v-btn(large :color="`${color} white--text`" class="mt-0 submit-button" @click="submit") {{ buttons.submit.text }}
-            v-icon(class="mr-0" color="white" :class="{'ma-0': !buttons.submit.icon}") {{ buttons.submit.icon }}
+          v-btn(large :color="`${color} white--text`" class="mt-0" :style="buttons.submit.style" @click="submit") {{ buttons.submit.text }}
+            v-icon(color="white" :class="{'pl-1': buttons.submit.icon}") {{ buttons.submit.icon }}
 </template>
 
 <script>
 export default {
-  head: {
-    link: [
-      { rel: 'stylesheet', href: '/vendor/animatecss/animate.min.css' }
-    ]
-  },
   data () {
     return {
       // Data concerning showing or hiding elements
@@ -36,7 +31,8 @@ export default {
       buttons: {
         submit: {
           text: 'Create',
-          icon: null
+          icon: null,
+          style: null
         }
       },
       // Data concerning the value of fields
@@ -51,12 +47,6 @@ export default {
       // Data concerning the validity of fields
       validity: {
         time: true
-      },
-      // Data concerning formats of fields
-      formats: {
-        time: {
-          isTwentyFourHour: null
-        }
       },
 
       // Data concerning the appearance of the form
@@ -87,11 +77,11 @@ export default {
       const [hours, minutes] = [...splitTime.map(i => parseInt(i))];
       const dateObj = new Date(year, month - 1, date, hours, minutes);
       // Adjust time if 12 hour time format is being used
-      if (!this.formats.time.isTwentyFourHour) {
-        if (hours === 12 && this.fields.time.toLowerCase().includes('am')) {
+      if (new RegExp(/[Aa][Mm]|[Pp][Mm]/).test(this.fields.time)) {
+        if (hours === 12 && new RegExp(/[Aa][Mm]/).test(this.fields.time)) {
           dateObj.setHours(hours - 12);
         }
-        else if (hours !== 12 && this.fields.time.toLowerCase().includes('pm')) {
+        else if (hours !== 12 && new RegExp(/[Pp][Mm]/).test(this.fields.time)) {
           dateObj.setHours(hours + 12);
         }
       }
@@ -109,6 +99,10 @@ export default {
       // Check if time format is valid
       if (!this.validity.time) {
         errors.time.push('Invalid time format.');
+      }
+      // Check if time has elapsed
+      if (this.timestamp && this.timestamp <= Date.now() / 1000) {
+        errors.time.push('This time has already elapsed on the date selected.');
       }
       /* If the submit button has been pressed and
       there are required fields empty, prompt the user to fill them */
@@ -130,6 +124,9 @@ export default {
     toggleSnackbar () {
       this.visibility.snackbar = !this.visibility.snackbar;
     },
+    trim (field) {
+      this.fields[field] = this.fields[field].trim();
+    },
     validateTimeFormat () {
       // 12 hour time validation
       const twelveHourRegex = new RegExp(/(\d|[01]\d):([012345]\d) ([AaPp][Mm])$/);
@@ -139,12 +136,10 @@ export default {
       if (twelveHourRegex.test(this.fields.time)) {
         this.validity.time = true;
         this.fields.time = this.fields.time.match(twelveHourRegex)[0];
-        this.formats.time.isTwentyFourHour = false;
       }
       else if (twentyFourHourRegex.test(this.fields.time)) {
         this.validity.time = true;
         this.fields.time = this.fields.time.match(twentyFourHourRegex)[0];
-        this.formats.time.isTwentyFourHour = true;
       }
       else {
         // Mark time field as invalid
@@ -152,7 +147,7 @@ export default {
       }
     },
     async submit () {
-      // Mark that the form has been submitted, which causes errors concerning if fields are filled out to be displayed
+      // Show that the form has been submitted, which causes errors concerning if fields are filled out to be displayed
       this.hasBeenSubmitted = true;
       // Don't submit the form if there are errors
       for (const i in this.errors) {
@@ -162,7 +157,7 @@ export default {
       }
       // Post with axios
       const URL = process.env.NODE_ENV === 'development' ? 'http://localhost:3000/API/create-plan' : '/API/create-plan';
-      await this.$axios({
+      const response = await this.$axios({
         method: 'POST',
         url: URL,
         data: {
@@ -174,6 +169,18 @@ export default {
           'Content-Type': 'application/json'
         }
       });
+      if (response.status === 201) {
+        // Alter button text
+        this.buttons.submit.text = 'Created';
+        // Add button icon
+        this.buttons.submit.icon = 'mdi-check-circle';
+        // Animate change of background color
+        this.buttons.submit.style = 'background-color: #4DB6AC !important; transition: background-color 0.5s !important;';
+        // Close the form after 1s
+        setTimeout(function () {
+          this.$emit('close');
+        }.bind(this), 1000);
+      }
     }
   }
 };

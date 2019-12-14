@@ -22,10 +22,11 @@
             v-list-item-content
               v-list-item-title My calendar
           v-list-item(@click="visibility.planCreationForm = true")
-            v-list-item-content
-              v-list-item-title Create a plan
-            v-dialog(persistent v-model="visibility.planCreationForm" max-width=800)
-              plan-creation-form(@close="visibility.planCreationForm = false")
+            template(v-slot:default="{ active, toggle }")
+              v-list-item-content
+                v-list-item-title Create a plan
+              v-dialog(persistent :value="visibility.planCreationForm" max-width=800)
+                plan-creation-form(@close="visibility.planCreationForm = false; toggle();")
     v-content
       nuxt
 </template>

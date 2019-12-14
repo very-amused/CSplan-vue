@@ -1,6 +1,6 @@
 <template lang="pug">
   v-card
-    v-icon(class="close-icon" color="blue-grey darken-4" @click="$emit('close')") fas fa-times
+    v-icon(class="close-icon" color="blue-grey darken-4" @click="close") fas fa-times
     v-card-title(class="pl-5") Create a Plan
     v-divider
     v-form
@@ -127,6 +127,12 @@ export default {
     trim (field) {
       this.fields[field] = this.fields[field].trim();
     },
+    close () {
+      // Reset data before closing the form
+      Object.assign(this.$data, this.$options.data());
+      // Emit the close event to the parent component
+      this.$emit('close');
+    },
     validateTimeFormat () {
       // 12 hour time validation
       const twelveHourRegex = new RegExp(/(\d|[01]\d):([012345]\d) ([AaPp][Mm])$/);
@@ -178,7 +184,7 @@ export default {
         this.buttons.submit.style = 'background-color: #4DB6AC !important; transition: background-color 0.5s !important;';
         // Close the form after 1s
         setTimeout(function () {
-          this.$emit('close');
+          this.close();
         }.bind(this), 1000);
       }
     }

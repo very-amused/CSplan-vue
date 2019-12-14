@@ -1,35 +1,36 @@
 <template lang="pug">
-  v-container(class="d-flex flex-column align-center")
-    v-card(v-bind="card" class="mt-5")
-      v-card-title(:class="card.title.class") Create a Plan
-      v-divider
-      v-form
-        v-col
-          v-text-field(label="Title" :color="color" v-model="fields.title"  :error-messages="errors.title" required)
-          v-row
-            v-text-field(label="Time" hint="If AM or PM is not specified, this time will be interpreted as 24-hour." v-model="fields.time" :error-messages="errors.time" :color="color" required @change="validateTimeFormat")
-            v-text-field(label="Date" :color="color" readonly required :value="fields.date" :error-messages="errors.date" append-icon="fa-calendar-alt" @click:append="toggleDatePicker")
-            v-dialog(v-model="visibility.datePicker" max-width=500)
-              v-date-picker(:color="color" v-model="fields.date" :min="today")
-                v-icon(class="close-icon" color="white" @click="toggleDatePicker") fas fa-times
-          v-textarea(label="Description (optional)" outlined no-resize rows="3" maxlength=2000 counter v-model="fields.description" :color="color" class="mb-0")
+  v-card
+    v-icon(class="close-icon" color="blue-grey darken-4" @click="$emit('close')") fas fa-times
+    v-card-title(class="pl-5") Create a Plan
+    v-divider
+    v-form
+      v-col
+        v-text-field(label="Title" :color="color" v-model="fields.title" :error-messages="errors.title" required)
+        v-row(class="mx-auto")
+          v-text-field(label="Time" hint="If AM or PM is not specified, this time will be interpreted as 24-hour." v-model="fields.time" :error-messages="errors.time" @change="validateTimeFormat" :color="color" class="w-45 " required)
+          v-spacer
+          v-text-field(label="Date" :color="color" readonly :value="fields.date" :error-messages="errors.date" append-icon="fa-calendar-alt" @click:append="visibility.datePicker = true" class="w-45" required)
+          v-dialog(v-model="visibility.datePicker" max-width=500)
+            v-date-picker(:color="color" v-model="fields.date" :min="today")
+              v-icon(class="close-icon" color="white" @click="toggleDatePicker") fas fa-times
+        v-textarea(label="Description (optional)" outlined no-resize rows="3" maxlength=2000 counter v-model="fields.description" :color="color" class="mb-0")
         v-col(align="center")
-          v-btn(large :color="`${color} white--text`" class="mt-0 submit-button" :class="{active: animations.submit}" @click="submit") {{ buttons.submit.text }}
+          v-btn(large :color="`${color} white--text`" class="mt-0 submit-button" @click="submit") {{ buttons.submit.text }}
             v-icon(class="mr-0" color="white" :class="{'ma-0': !buttons.submit.icon}") {{ buttons.submit.icon }}
 </template>
 
 <script>
 export default {
+  head: {
+    link: [
+      { rel: 'stylesheet', href: '/vendor/animatecss/animate.min.css' }
+    ]
+  },
   data () {
     return {
       // Data concerning showing or hiding elements
       visibility: {
-        datePicker: false,
-        snackbar: false
-      },
-      // Data that triggers animations
-      animations: {
-        submit: false
+        datePicker: false
       },
       // Data concerning the text/icons shown on buttons
       buttons: {
@@ -45,9 +46,9 @@ export default {
         date: null,
         description: null
       },
-      // Data concerning whether the submit button has been pressed
-      submitButtonPressed: false,
-      // Data concerning validity of fields
+      // Data concerning whether the form has been submitted
+      hasBeenSubmitted: false,
+      // Data concerning the validity of fields
       validity: {
         time: true
       },
@@ -58,23 +59,10 @@ export default {
         }
       },
 
-      // Data concerning appearance of the form
-      card: {
-        class: 'card',
-        width: 1000,
-        height: 550,
-        title: {
-          class: 'display-1'
-        },
-        text: {
-          class: 'subtitle-1'
-        }
-      },
-
-      color: 'indigo darken-1'
+      // Data concerning the appearance of the form
+      color: 'indigo lighten-1'
     };
   },
-
   computed: {
     // Returns the current date at midnight (for purposes of the minimum date allowed on the date picker)
     today () {
@@ -124,9 +112,9 @@ export default {
       }
       /* If the submit button has been pressed and
       there are required fields empty, prompt the user to fill them */
-      if (this.submitButtonPressed) {
-        for (const i in this.fields) {
-          if (i !== 'description' && !this.fields[i]) {
+      if (this.hasBeenSubmitted) {
+        for (const i in errors) {
+          if (!this.fields[i]) {
             errors[i].push('This field is required.');
           }
         }
@@ -165,7 +153,7 @@ export default {
     },
     async submit () {
       // Mark that the form has been submitted, which causes errors concerning if fields are filled out to be displayed
-      this.submitButtonPressed = true;
+      this.hasBeenSubmitted = true;
       // Don't submit the form if there are errors
       for (const i in this.errors) {
         if (this.errors[i].length) {
@@ -174,7 +162,7 @@ export default {
       }
       // Post with axios
       const URL = process.env.NODE_ENV === 'development' ? 'http://localhost:3000/API/create-plan' : '/API/create-plan';
-      const response = await this.$axios({
+      await this.$axios({
         method: 'POST',
         url: URL,
         data: {
@@ -186,27 +174,18 @@ export default {
           'Content-Type': 'application/json'
         }
       });
-      if (response.status === 201) {
-        // Trigger animations
-        this.animations.submit = true;
-        this.buttons.submit.text = 'Created';
-        this.buttons.submit.icon = 'mdi-check-circle';
-        // Clear and reset the form after 1s
-        setTimeout(function () {
-          Object.assign(this.$data, this.$options.data());
-        }.bind(this), 1000);
-      }
     }
   }
 };
 </script>
 
 <style scoped>
-@import '~/assets/card.css';
-@import '~/assets/submit-button.css';
 .close-icon {
   position: absolute;
   right: 1rem;
   top: 1rem;
+}
+.w-45 {
+  width: 45%;
 }
 </style>

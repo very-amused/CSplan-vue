@@ -1,10 +1,10 @@
 <template lang="pug">
   v-app
-    v-navigation-drawer(permanent width="180" color="blue-grey darken-4" app)
-      v-list(nav dark class="d-flex flex-column")
+    v-navigation-drawer(permanent width=200 color="blue-grey darken-4" app)
+      v-list(nav dark)
         v-list-item
           v-list-item-icon(class="mr-5")
-            v-btn(light small fab color="white")
+            v-btn(light small fab :color="color")
               v-icon mdi-account
           v-list-item-content
             v-list-item-title Account
@@ -27,30 +27,32 @@
                 v-list-item-title Create a plan
               v-dialog(persistent :value="visibility.planCreationForm" max-width=800)
                 plan-creation-form(@close="visibility.planCreationForm = false; toggle();")
+      color-picker
     v-content
       nuxt
 </template>
 
 <script>
 import planCreationForm from '~/components/planCreationForm';
+import colorPicker from '~/components/colorPicker';
 export default {
   components: {
-    planCreationForm
+    planCreationForm,
+    colorPicker
   },
+
   data () {
     return {
       visibility: {
         planCreationForm: false
       }
     };
+  },
+
+  computed: {
+    color () {
+      return this.$store.state.color;
+    }
   }
 };
 </script>
-
-<style scoped>
-.close-icon {
-  position: absolute;
-  right: 1rem;
-  top: 1rem;
-}
-</style>

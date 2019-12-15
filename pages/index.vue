@@ -1,7 +1,7 @@
 <template lang="pug">
   v-container(class="d-flex flex-column align-center")
     v-row(class="mt-5")
-      v-card(v-bind="card")
+      v-card(v-bind="card" :color="color")
         v-img(src="/img/logo.svg" height=300 contain)
       v-card(v-bind="card")
         v-card-title(v-bind:class="card.title.class") Info
@@ -24,7 +24,7 @@
 
 <script>
 export default {
-  data: () => {
+  data () {
     return {
       card: {
         class: 'card',
@@ -37,18 +37,12 @@ export default {
         }
       }
     };
+  },
+
+  computed: {
+    color () {
+      return this.$store.state.color;
+    }
   }
 };
 </script>
-
-<style scoped>
-@import '~/assets/card.css';
-.card {
-  background-color: #00BFFF !important;
-}
-/* Expansion panel background color is the same as Vuetify's light-blue color */
-.expansion-panel {
-  border-radius: 0 !important;
-  background-color: #00BFFF !important;
-}
-</style>

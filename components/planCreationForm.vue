@@ -15,7 +15,7 @@
               v-icon(class="close-icon" color="white" @click="toggleDatePicker") fas fa-times
         v-textarea(label="Description (optional)" outlined no-resize rows="3" maxlength=2000 counter v-model="fields.description" @change="trim('description')" :color="color" class="mt-5")
         v-col(align="center")
-          v-btn(large :color="`${color} white--text`" class="mt-0" :style="buttons.submit.style" @click="submit") {{ buttons.submit.text }}
+          v-btn(large :color="color" class="mt-0" :style="buttons.submit.style" @click="submit") {{ buttons.submit.text }}
             v-icon(color="white" :class="{'pl-1': buttons.submit.icon}") {{ buttons.submit.icon }}
 </template>
 
@@ -47,13 +47,13 @@ export default {
       // Data concerning the validity of fields
       validity: {
         time: true
-      },
-
-      // Data concerning the appearance of the form
-      color: 'indigo lighten-1'
+      }
     };
   },
   computed: {
+    color () {
+      return this.$store.state.color;
+    },
     // Returns the current date at midnight (for purposes of the minimum date allowed on the date picker)
     today () {
       const d = new Date();

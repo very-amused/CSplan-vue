@@ -1,12 +1,13 @@
 <template lang="pug">
   v-container(class="d-flex flex-column align-center")
-    v-row(class="mt-5")
-      v-card(v-bind="card" :color="color")
-        v-img(src="/img/logo.svg" height=300 contain)
-      v-card(v-bind="card")
+    v-card(width=800 color="blue-grey darken-4" flat tile)
+      v-img(src="/img/logo.svg" class="mx-5" height=250 contain)
+      v-divider
+      v-card-subtitle(class="white--text") CSplan is a time management system that keeps you in control. Create a free account to reclaim your time with privacy, simplicity, and efficiency.
+      //-v-card(v-bind="card")
         v-card-title(v-bind:class="card.title.class") Info
         v-card-text(v-bind:class="card.text.class") CSplan is a simple and fast planning and time management system that keeps you in control. Privacy, simplicity, and efficiency are the building blocks of CSplan's core values.
-    v-row(class="mt-5")
+    //-v-row(class="mt-5")
       v-card(v-bind:width="2 * card.width")
         v-expansion-panels
           v-expansion-panel(v-bind:width="2 * card.width" class="expansion-panel")

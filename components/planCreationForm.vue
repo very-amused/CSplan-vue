@@ -15,7 +15,7 @@
               v-icon(class="close-icon" color="white" @click="toggleDatePicker") fas fa-times
         v-textarea(label="Description (optional)" outlined no-resize rows="3" maxlength=2000 counter v-model="fields.description" @change="trim('description')" :color="color" class="mt-5")
         v-col(align="center")
-          v-btn(large :color="color" class="mt-0" :style="buttons.submit.style" @click="submit") {{ buttons.submit.text }}
+          v-btn(large :color="color" class="mt-0 white--text" :style="buttons.submit.style" @click="submit") {{ buttons.submit.text }}
             v-icon(color="white" :class="{'pl-1': buttons.submit.icon}") {{ buttons.submit.icon }}
 </template>
 

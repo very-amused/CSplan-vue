@@ -4,18 +4,22 @@
       span {{ color }}
       //- Accent colors
       v-row(justify="center")
-        v-btn(fab class="xx-small mx-1 my-2" v-for="color in colors.accent" :key="color" :color="color" @click="setColor(color)")
+        v-btn(fab class="xx-small mx-1 my-2" v-for="color in colors" :key="color" :color="color" @click="setColor(color)")
+          v-icon(v-if="color === storedColor" color="white") far fa-circle
 </template>
 
 <script>
 export default {
   data () {
     return {
-      colors: {
-        // indigo accent-3, green accent-3, deep-orange accent-3, red accent-3
-        accent: ['#3D5AFE', '#00E676', '#FF3D00', '#FF1744']
-      }
+      colors: ['#3D5AFE', '#00E676', '#FF3D00', '#FF1744']
     };
+  },
+
+  computed: {
+    storedColor () {
+      return this.$store.state.color;
+    }
   },
 
   methods: {

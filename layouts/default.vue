@@ -11,7 +11,7 @@
         //- Divider color is the same as 'blue-grey darken-2' from Material Color Palette
         v-divider(style="background-color: #455A64 !important;")
         //- Navigation links
-        v-list-item-group(color="indigo lighten-1")
+        v-list-item-group(:color="color")
           v-list-item
             v-list-item-content
               v-list-item-title My dashboard
@@ -25,7 +25,7 @@
             template(v-slot:default="{ active, toggle }")
               v-list-item-content
                 v-list-item-title Create a plan
-              v-dialog(persistent :value="visibility.planCreationForm" max-width=800)
+              v-dialog(persistent no-click-animation :value="visibility.planCreationForm" max-width=800)
                 plan-creation-form(@close="visibility.planCreationForm = false; toggle();")
       color-picker
     v-content

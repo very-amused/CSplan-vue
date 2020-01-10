@@ -23,6 +23,8 @@
 export default {
   data () {
     return {
+      // Highlight color for form elements
+      color: 'blue',
       // Data concerning showing or hiding elements
       visibility: {
         datePicker: false
@@ -51,9 +53,6 @@ export default {
     };
   },
   computed: {
-    color () {
-      return this.$store.state.color;
-    },
     // Returns the current date at midnight (for purposes of the minimum date allowed on the date picker)
     today () {
       const d = new Date();

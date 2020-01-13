@@ -27,7 +27,6 @@
                 v-list-item-title Create a plan
               v-dialog(persistent no-click-animation :value="visibility.planCreationForm" max-width=800)
                 plan-creation-form(@close="visibility.planCreationForm = false; toggle();")
-      color-picker
     v-content
       nuxt
 </template>

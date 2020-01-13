@@ -120,9 +120,6 @@ export default {
     toggleDatePicker () {
       this.visibility.datePicker = !this.visibility.datePicker;
     },
-    toggleSnackbar () {
-      this.visibility.snackbar = !this.visibility.snackbar;
-    },
     trim (field) {
       this.fields[field] = this.fields[field].trim();
     },

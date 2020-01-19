@@ -190,18 +190,20 @@ export default {
         }
       }
 
-      // Store the JWT in localStorage
+      // Store the JWT in localStorage and vuex
       if (process.browser) {
         localStorage.setItem('token', response.data.token);
+        this.$store.commit('setToken', response.data.token);
       }
       const info = await this.$axios({
         method: 'GET',
         url: 'http://localhost:3000/API/me/info',
         headers: {
-          Authorization: `Bearer ${response.data.token}`
+          Authorization: `Bearer ${this.$store.state.token}`
         }
       });
-      console.log(info);
+      const displayName = (info.data.firstName && info.data.lastName) ? `${info.data.firstName} ${info.data.lastName}` : info.data.ID;
+      this.$store.commit('setDisplayName', displayName);
     }
   }
 };

@@ -7,7 +7,7 @@
             v-btn(light small fab color="blue")
               v-icon mdi-account
           v-list-item-content
-            v-list-item-title Account
+            v-list-item-title {{ displayName || 'Account' }}
         //- Divider color is the same as 'blue-grey darken-2' from Material Color Palette
         v-divider(style="background-color: #455A64 !important;")
         //- Navigation links
@@ -44,6 +44,12 @@ export default {
         planCreationForm: false
       }
     };
+  },
+
+  computed: {
+    displayName () {
+      return this.$store.state.displayName;
+    }
   }
 };
 </script>

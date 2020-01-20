@@ -23,8 +23,6 @@
 export default {
   data () {
     return {
-      // Highlight color for form elements
-      color: 'blue',
       // Data concerning showing or hiding elements
       visibility: {
         datePicker: false
@@ -113,6 +111,9 @@ export default {
         }
       }
       return errors;
+    },
+    color () {
+      return this.$store.state.color;
     }
   },
 

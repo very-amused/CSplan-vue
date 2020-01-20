@@ -6,15 +6,18 @@
       v-divider
       v-form
         v-col(align="center")
+          v-row(class="ma-0")
+            v-text-field(label="First Name" hint="(optional)" class="first-name" :color="color" v-model="fields.firstName" filled rounded)
+            v-text-field(label="Last Name" hint="(optional)" class="last-name" :color="color" v-model="fields.lastName" filled rounded)
           v-text-field(label="Email" type="email" :color="color" v-model="fields.email" :rules="[emailValidate]" filled rounded validate-on-blur)
           v-text-field(label="Password" type="password" :color="color" v-model="fields.password" :rules="[passwordValidate]" filled rounded hint="Make this secure!" validate-on-blur)
-          v-btn(large :color="color" class="mt-0 white--text" @click="submit") Create
+          v-btn(large outlined rounded :color="color" class="mt-0 white--text" @click="submit") Create
 
     //- Progress area
     div(v-show="visibility.progress")
       v-col(align="right")
         v-list
-          v-list-item(v-for="spinner in spinners" v-show="spinner.show")
+          v-list-item(v-for="spinner in spinners" :key="spinner.message" v-show="spinner.show")
             v-list-item-avatar
               v-progress-circular(v-show="spinner.spin" :color="color" :indeterminate="spinner.spin")
               v-icon(v-show="!spinner.spin" :color="spinner.icon.color") {{ spinner.icon.name }}
@@ -29,10 +32,10 @@
 export default {
   data () {
     return {
-      // Highlight color for form elements
-      color: 'blue',
       // Data concerning the value of fields
       fields: {
+        firstName: '',
+        lastName: '',
         email: '',
         password: ''
       },
@@ -80,6 +83,9 @@ export default {
     // Whether the form is valid or not
     isValid () {
       return (this.emailValidate() === true && this.passwordValidate() === true);
+    },
+    color () {
+      return this.$store.state.color;
     }
   },
 
@@ -121,6 +127,8 @@ export default {
           method: 'POST',
           url: 'http://localhost:3000/API/register',
           data: {
+            firstName: this.fields.firstName,
+            lastName: this.fields.lastName,
             email: this.fields.email,
             password: this.fields.password
           },
@@ -191,19 +199,14 @@ export default {
       }
 
       // Store the JWT in localStorage and vuex
-      if (process.browser) {
-        localStorage.setItem('token', response.data.token);
-        this.$store.commit('setToken', response.data.token);
-      }
-      const info = await this.$axios({
-        method: 'GET',
-        url: 'http://localhost:3000/API/me/info',
-        headers: {
-          Authorization: `Bearer ${this.$store.state.token}`
-        }
-      });
-      const displayName = (info.data.firstName && info.data.lastName) ? `${info.data.firstName} ${info.data.lastName}` : info.data.ID;
-      this.$store.commit('setDisplayName', displayName);
+      localStorage.setItem('token', response.data.token);
+      this.$store.commit('setToken', response.data.token);
+      // Store the user's information in localStorage and vuex
+      localStorage.setItem('user', JSON.stringify(response.data.info));
+      this.$store.commit('setUser', response.data.info);
+
+      // Finally, redirect the user back to the landing page
+      this.$router.replace('/');
     }
   }
 };
@@ -212,5 +215,13 @@ export default {
 <style>
 .passwd-requirements {
   text-decoration: underline !important;
+}
+.first-name {
+  width: 40% !important;
+  margin-right: 0.5rem !important;
+}
+.last-name {
+  width: 40% !important;
+  margin-left: 0.5rem !important;
 }
 </style>

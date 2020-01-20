@@ -1,13 +1,14 @@
 export const state = () => ({
   token: '',
-  displayName: ''
+  user: '',
+  color: 'blue'
 });
 
 export const mutations = {
   setToken (state, token) {
     state.token = token;
   },
-  setDisplayName (state, displayName) {
-    state.displayName = displayName;
+  setUser (state, user) {
+    state.user = { ...user };
   }
 };

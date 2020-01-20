@@ -44,9 +44,9 @@ export default {
       },
       // Data concerning whether the form has been submitted
       hasBeenSubmitted: false,
-      // Data concerning the validity of fields
-      validity: {
-        time: true
+      // Validation errors for fields
+      validationErrors: {
+        time: []
       }
     };
   },
@@ -90,23 +90,19 @@ export default {
     errors () {
       const errors = {
         title: [],
-        time: [],
+        time: [...this.validationErrors.time],
         date: []
       };
-      // Check if time format is valid
-      if (!this.validity.time) {
-        errors.time.push('Invalid time format.');
-      }
       // Check if time has elapsed
       if (this.timestamp && this.timestamp <= Date.now() / 1000) {
-        errors.time.push('This time has already elapsed on the date selected.');
+        errors.time.push('This time has already elapsed on the date selected');
       }
       /* If the submit button has been pressed and
       there are required fields empty, prompt the user to fill them */
       if (this.hasBeenSubmitted) {
         for (const i in errors) {
           if (!this.fields[i]) {
-            errors[i].push('This field is required.');
+            errors[i].push('This field is required');
           }
         }
       }
@@ -137,16 +133,16 @@ export default {
       const twentyFourHourRegex = new RegExp(/(\d|[01]\d|2[0123]):([012345]\d)$/);
       // Test the provided time against the regex
       if (twelveHourRegex.test(this.fields.time)) {
-        this.validity.time = true;
+        this.validationErrors.time = [];
         this.fields.time = this.fields.time.match(twelveHourRegex)[0];
       }
       else if (twentyFourHourRegex.test(this.fields.time)) {
-        this.validity.time = true;
+        this.validationErrors.time = [];
         this.fields.time = this.fields.time.match(twentyFourHourRegex)[0];
       }
       else {
         // Mark time field as invalid
-        this.validity.time = false;
+        this.validationErrors.time.push('Invalid time format');
       }
     },
     async submit () {

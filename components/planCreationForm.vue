@@ -7,7 +7,7 @@
       v-col
         v-text-field(label="Title" :color="color" v-model="fields.title" :error-messages="errors.title" @change="trim('title')" required)
         v-row(class="mx-auto")
-          v-text-field(label="Time" hint="If AM or PM is not specified, this time will be interpreted as 24-hour." v-model="fields.time" :error-messages="errors.time" @change="trim('time'); validateTimeFormat" :color="color" class="w-45 " required)
+          v-text-field(label="Time" hint="If AM or PM is not specified, this time will be interpreted as 24-hour." v-model="fields.time" :error-messages="errors.time" @change="trim('time'); validateTimeFormat()" :color="color" class="w-45 " required)
           v-spacer
           v-text-field(label="Date" :color="color" readonly :value="fields.date" :error-messages="errors.date" append-icon="fa-calendar-alt" @click:append="visibility.datePicker = true" class="w-45" required)
           v-dialog(v-model="visibility.datePicker" max-width=500)
@@ -62,7 +62,7 @@ export default {
     timestamp () {
       /* Return if the time or date don't exist or are invalid
       (validity of date is assumed because of vuetify's date picker) */
-      if (!(this.fields.time && this.fields.date && this.validity.time)) {
+      if (!this.fields.time || !this.fields.date || this.validationErrors.time.length) {
         return null;
       }
       // Parse year, month, and date

@@ -225,11 +225,9 @@ export default {
       }
 
       // Store the JWT in localStorage and vuex
-      localStorage.setItem('token', response.data.token);
-      this.$store.commit('setToken', response.data.token);
+      this.$store.commit('user/setToken', response.data.token);
       // Store the user's information in localStorage and vuex
-      localStorage.setItem('user', JSON.stringify(response.data.info));
-      this.$store.commit('setUser', response.data.info);
+      this.$store.commit('user/setInfo', response.data.info);
 
       // Finally, redirect the user back to the landing page
       this.$router.replace('/');

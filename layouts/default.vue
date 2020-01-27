@@ -2,8 +2,8 @@
   v-app
     v-navigation-drawer(permanent width=200 color="blue-grey darken-4" app)
       v-list(nav dark)
-        v-list-item(v-if="$store.state.user")
-          v-list-item-icon(class="mr-2")
+        v-list-item(v-if="$store.state.user.info")
+          v-list-item-icon(class="mr-3")
             v-btn(light small fab :color="color")
               v-icon mdi-account
           v-list-item-content
@@ -51,7 +51,7 @@ export default {
 
   computed: {
     displayName () {
-      const user = this.$store.state.user;
+      const user = this.$store.state.user.info;
       return (user.firstName && user.lastName) ? `${user.firstName} ${user.lastName}` : user.email;
     },
     color () {
@@ -60,13 +60,12 @@ export default {
   },
 
   mounted () {
-    // Update state with data from localStorage
-    if (localStorage.getItem('token')) {
-      this.$store.commit('setToken', localStorage.getItem('token'));
-    }
-    if (localStorage.getItem('user')) {
-      this.$store.commit('setUser', JSON.parse(localStorage.getItem('user')));
-    }
+    // Initialize state with data from localStorage
+    this.$store.commit('init');
+    // Subscribe to all store updates and commit them to localStorage
+    this.$store.subscribe((mutation, state) => {
+      localStorage.setItem('store', JSON.stringify(state));
+    });
   }
 };
 </script>

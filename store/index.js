@@ -1,14 +1,13 @@
 export const state = () => ({
-  token: '',
-  user: '',
   color: 'blue'
 });
 
 export const mutations = {
-  setToken (state, token) {
-    state.token = token;
-  },
-  setUser (state, user) {
-    state.user = { ...user };
+  init (state) {
+    if (localStorage.getItem('store')) {
+      this.replaceState(
+        Object.assign(state, JSON.parse(localStorage.getItem('store')))
+      );
+    }
   }
 };

@@ -224,7 +224,7 @@ export default {
         return;
       }
 
-      // Store the JWT in localStorage and vuex
+      // Store the token in localStorage and vuex
       this.$store.commit('user/setToken', response.data.token);
       // Store the user's information in localStorage and vuex
       this.$store.commit('user/setInfo', response.data.info);

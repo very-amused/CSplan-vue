@@ -1,16 +1,16 @@
 <template lang="pug">
   v-container(id="container" fluid class="d-flex flex-row justify-center" fill-height)
     v-container(class="d-flex flex-column align-center")
-      registration-form(style="margin-bottom: 4rem;")
+      login-form(style="margin-bottom: 4rem;")
 </template>
 
 <script>
-import registrationForm from '~/components/registrationForm';
+import loginForm from '~/components/loginForm';
 export default {
   layout: 'account',
 
   components: {
-    registrationForm
+    loginForm
   }
 };
 </script>

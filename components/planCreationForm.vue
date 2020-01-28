@@ -17,6 +17,7 @@
         v-col(align="center")
           v-btn(large :color="color" class="mt-0 white--text" :style="buttons.submit.style" @click="submit") {{ buttons.submit.text }}
             v-icon(color="white" :class="{'pl-1': buttons.submit.icon}") {{ buttons.submit.icon }}
+          v-card-text(v-if="submitError" class="red--text") {{ submitError }}
 </template>
 
 <script>
@@ -47,7 +48,9 @@ export default {
       // Validation errors for fields
       validationErrors: {
         time: []
-      }
+      },
+      // Backend errors that occured after submitting
+      submitError: ''
     };
   },
   computed: {
@@ -156,30 +159,35 @@ export default {
       }
       // Post with axios
       const URL = process.env.NODE_ENV === 'development' ? 'http://localhost:3000/API/create-plan' : '/API/create-plan';
-      const response = await this.$axios({
-        method: 'POST',
-        url: URL,
-        data: {
-          title: this.fields.title,
-          timestamp: this.timestamp,
-          description: this.fields.description
-        },
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      if (response.status === 201) {
-        // Alter button text
-        this.buttons.submit.text = 'Created';
-        // Add button icon
-        this.buttons.submit.icon = 'mdi-check-circle';
-        // Animate change of background color
-        this.buttons.submit.style = 'background-color: #4DB6AC !important; transition: background-color 0.5s !important;';
-        // Close the form after 1s
-        setTimeout(function () {
-          this.close();
-        }.bind(this), 1000);
+      try {
+        await this.$axios({
+          method: 'POST',
+          url: URL,
+          data: {
+            title: this.fields.title,
+            timestamp: this.timestamp,
+            description: this.fields.description
+          },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: this.$store.state.user.token
+          }
+        });
       }
+      catch (err) {
+        this.submitError = `An error was encountered in submitting this form: '${err.response.data.message}'`;
+        return;
+      }
+      // Alter button text
+      this.buttons.submit.text = 'Created';
+      // Add button icon
+      this.buttons.submit.icon = 'mdi-check-circle';
+      // Animate change of background color
+      this.buttons.submit.style = 'background-color: #4DB6AC !important; transition: background-color 0.5s !important;';
+      // Close the form after 1s
+      setTimeout(function () {
+        this.close();
+      }.bind(this), 1000);
     }
   }
 };

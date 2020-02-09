@@ -158,11 +158,11 @@ export default {
         }
       }
       // Post with axios
-      const URL = process.env.NODE_ENV === 'development' ? 'http://localhost:3000/API/create-plan' : '/API/create-plan';
+      const baseUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '';
       try {
         await this.$axios({
           method: 'POST',
-          url: URL,
+          url: `${baseUrl}/API/me/plans`,
           data: {
             title: this.fields.title,
             timestamp: this.timestamp,

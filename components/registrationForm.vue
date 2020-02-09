@@ -7,8 +7,8 @@
       v-form
         v-col(align="center")
           v-row(class="ma-0")
-            v-text-field(label="First Name" hint="(optional)" class="first-name" :color="color" v-model="fields.firstName" filled rounded)
-            v-text-field(label="Last Name" hint="(optional)" class="last-name" :color="color" v-model="fields.lastName" filled rounded)
+            v-text-field(label="First Name" hint="(optional)" class="first-name" :color="color" v-model="fields.firstName" :error-messages="errors.firstName" filled rounded)
+            v-text-field(label="Last Name" hint="(optional)" class="last-name" :color="color" v-model="fields.lastName" :error-messages="errors.lastName" filled rounded)
           v-text-field(label="Email" type="email" :color="color" v-model="fields.email" @change="validateEmail" :error-messages="errors.email" filled rounded validate-on-blur)
           v-text-field(label="Password" type="password" :color="color" v-model="fields.password" @change="validatePassword" :error-messages="errors.password" filled rounded hint="Make this secure!" validate-on-blur)
           v-btn(large outlined rounded :color="color" class="mt-0 white--text" @click="submit") Create
@@ -29,6 +29,7 @@
 </template>
 
 <script>
+import * as _crypto from '~/middleware/crypto';
 export default {
   data () {
     return {
@@ -90,6 +91,8 @@ export default {
     // Whether the form is valid or not
     errors () {
       const errors = {
+        firstName: [],
+        lastName: [],
         email: [...this.validationErrors.email],
         password: [...this.validationErrors.password]
       };
@@ -97,6 +100,12 @@ export default {
         for (const i in errors) {
           if (!this.fields[i]) {
             errors[i].push('This field is required');
+          }
+        }
+        // Inform user of the invisible character limit on name fields
+        for (const field of ['firstName', 'lastName']) {
+          if (this.fields[field].length > 100) {
+            errors[field].push('Must be no longer than 100 characters');
           }
         }
       }
@@ -143,25 +152,29 @@ export default {
           return;
         }
       }
+
+      // Generate the user's RSA keypair for use in clientside cryptography
+      try {
+        _crypto.cryptoCheck();
+      }
+      catch (err) {
+        this.submissionError = err;
+        return;
+      }
+      const keyInfo = await _crypto.generateMasterKeypair(this.fields.password);
+
+      // Encrypt the user's first and last name
+      const encryptedFirstName = this.fields.firstName.length ? await _crypto.publicEncrypt(this.fields.firstName, keyInfo.keys.publicKey) : null;
+      const encryptedLastName = this.fields.lastName.length ? await _crypto.publicEncrypt(this.fields.lastName, keyInfo.keys.publicKey) : null;
+
       // API requests to be made in the registration process
       const reqs = [
         {
           method: 'POST',
           url: 'http://localhost:3000/API/register',
           data: {
-            firstName: this.fields.firstName,
-            lastName: this.fields.lastName,
-            email: this.fields.email,
-            password: this.fields.password
-          },
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        },
-        {
-          method: 'POST',
-          url: 'http://localhost:3000/API/keygen',
-          data: {
+            firstName: encryptedFirstName,
+            lastName: encryptedLastName,
             email: this.fields.email,
             password: this.fields.password
           },

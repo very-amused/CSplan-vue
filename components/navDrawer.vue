@@ -23,7 +23,7 @@
         v-list-item
           v-list-item-content
             v-list-item-title My calendar
-        v-list-item(v-if="this.$store.state.user" @click="visibility.planCreationForm = true")
+        v-list-item(v-if="$store.state.user.info" @click="visibility.planCreationForm = true")
           template(v-slot:default="{ active, toggle }")
             v-list-item-content
               v-list-item-title Create a plan

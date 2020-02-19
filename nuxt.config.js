@@ -18,8 +18,7 @@ export default {
       { name: 'viewport', content: 'width=device-width, initial-scale=1' }
     ],
     link: [
-      { rel: 'icon', href: '/favicon.ico' },
-      { rel: 'stylesheet', href: '/vendor/fontawesome/css/all.min.css' }
+      { rel: 'icon', href: '/favicon.ico' }
     ]
   },
   /*
@@ -49,7 +48,8 @@ export default {
   */
   modules: [
     // Doc: https://axios.nuxtjs.org/usage
-    '@nuxtjs/axios'
+    '@nuxtjs/axios',
+    'nuxt-buefy'
   ],
   /*
   ** Axios module configuration

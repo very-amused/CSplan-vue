@@ -7,6 +7,6 @@
     template(slot="end")
       b-navbar-item(tag="div")
         div(class="buttons")
-          b-button(type="is-light" rounded) Register
+          b-button(tag="nuxt-link" to="/account/register" type="is-light" rounded) Register
           b-button(type="is-primary" rounded) Log in
 </template>

@@ -35,7 +35,7 @@ export async function register (axios, user) {
  * @returns {Promise<string>} The user's authentication token, valid for 1 week
  */
 export async function login (axios, user) {
-  const res = await axios({
+  const response = await axios({
     method: 'POST',
     url: '/API/login',
     data: {
@@ -47,5 +47,5 @@ export async function login (axios, user) {
       throw err.response || err;
     });
 
-  return res.data;
+  return response.data.data.token;
 }

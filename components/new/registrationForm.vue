@@ -3,28 +3,30 @@
     div(class="card-content")
       div(class="media-content")
         header(class="title is-3") Create an Account
-        b-field(label="First Name" message="(optional)")
-          b-input(v-model="fields.firstName" maxlength="100" :has-counter="false")
-        b-field(label="Last Name" message="(optional)")
-          b-input(v-model="fields.lastName" maxlength="100" :has-counter="false")
         b-field(label="Email")
           b-input(v-model="fields.email" id="emailInput" type="email" icon="at")
         b-field(label="Password")
           //- The password field uses a custom validation function, but still relies on the html5 validity state of the input
           b-input(v-model="fields.password" id="passwordInput" type="password" password-reveal icon="lock" maxlength="60" @blur="validatePassword")
-        b-button(:expanded="true" type="is-primary") Create
+        b-field
+          b-button(:expanded="true" @click="submit" type="is-primary") Create
+        div(v-show="error" class="media")
+          figure(class="media-left")
+            b-icon(icon="alert-circle" type="is-danger")
+          div(class="media-content")
+          p(class="has-text-danger errorMsg") {{ error }}
 </template>
 
 <script>
+import * as _auth from '~/middleware/handlers/auth';
 export default {
   data () {
     return {
       fields: {
-        firstName: '',
-        lastName: '',
         email: '',
         password: ''
-      }
+      },
+      error: null
     };
   },
 
@@ -41,7 +43,7 @@ export default {
 
       // The form is invalid if any (required) elements fail html5 validation or are empty
       for (const i in elements) {
-        if (!elements[i].checkValidity() || !elements[i].length) {
+        if (!elements[i].checkValidity() || !elements[i].value.length) {
           return false;
         }
       }
@@ -53,18 +55,56 @@ export default {
      */
     validatePassword () {
       const regex = new RegExp(/(?=.*[a-z])(?=.*[A-Z])/);
-      if (!regex.test(this.fields.password)) {
-        document.querySelector('#passwordInput')
+      const passwd = document.querySelector('#passwordInput');
+      if (!regex.test(passwd.value)) {
+        passwd
           .setCustomValidity('Password does not meet the requirements listed below.');
         return false;
       }
       else {
         // Setting an empty string as the validation message revalidates the password field
-        document.querySelector('#passwordInput')
+        passwd
           .setCustomValidity('');
         return true;
+      }
+    },
+    /**
+     * Submits the form and handles the API response
+     * @returns {Promise<void>}
+     */
+    async submit () {
+      // Don't submit an invalid form
+      if (!this.validate()) {
+        return;
+      }
+
+      await _auth.register(this.$axios, {
+        email: this.fields.email,
+        password: this.fields.password
+      })
+        .catch((err) => {
+          // Set the error message to the 'message' prop returned by the API
+          this.error = err.data.message || 'An unknown error occured, refresh the page and try again.';
+        });
+      // Emit the success event if no errors occured in submission
+      if (!this.error) {
+        this.$emit('success');
+      }
+      // Else emit the error event
+      else {
+        this.$emit('error');
       }
     }
   }
 };
 </script>
+
+<style>
+.submitError {
+  display: flex;
+  flex-direction: row;
+}
+.errorMsg {
+  max-width: 15rem;
+}
+</style>

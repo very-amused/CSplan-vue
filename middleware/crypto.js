@@ -1,20 +1,52 @@
-/*
-* Convert  an ArrayBuffer into a string
-* from https://developers.google.com/web/updates/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
-*/
-function encode (buf) {
+/**
+ * Encode an ArrayBuffer as base64
+ * @param {ArrayBuffer | Uint8Array} buf - ArrayBuffer data
+ * @returns {String} Base64
+ * @public
+ */
+export function ABencode (buf) {
   return btoa(String.fromCharCode.apply(null, new Uint8Array(buf)));
 }
 
-function decode (str) {
-  const rawStr = atob(str);
-  const buf = new Uint8Array(rawStr.length);
-  for (let i = 0; i < rawStr.length; i++) {
-    buf[i] = rawStr.charCodeAt(i);
+/**
+ * Decode a base64 string as an ArrayBuffer
+ * @param {String} base64 - Base64
+ * @returns {ArrayBuffer | Uint8Array} ArrayBuffer data
+ * @public
+ */
+export function ABdecode (base64) {
+  const raw = atob(base64);
+  const buf = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) {
+    buf[i] = raw.charCodeAt(i);
   }
   return buf;
 }
 
+/**
+ * Concatenate two ArrayBuffers/Uint8Arrays
+ * @param {ArrayBuffer | Uint8Array} buf1
+ * @param {ArrayBuffer | Uint8Array} buf2
+ * @returns {Uint8Array}
+ * @private
+ */
+function ABconcat (buf1, buf2) {
+  const buf1Accessible = new Uint8Array(buf1);
+  const buf2Accessible = new Uint8Array(buf2);
+
+  const concat = new Uint8Array(buf1Accessible.byteLength + buf2Accessible.byteLength);
+  concat.set(buf1Accessible, 0);
+  concat.set(buf2Accessible, buf1Accessible.byteLength);
+
+  return concat;
+}
+
+/**
+ * Create a KeyObject from a passphrase
+ * @param {String} passphrase - Passphrase to create a key from
+ * @returns {Promise<CryptoKey>} KeyObject
+ * @private
+ */
 function passToKey (passphrase) {
   // Encode the passphrase in the form of an 8 bit unsigned int array
   const enc = new TextEncoder();
@@ -31,7 +63,14 @@ function passToKey (passphrase) {
   );
 }
 
-async function deriveTempKey (salt, passphrase) {
+/**
+ * Derive a 128-bit AES-GCM key from a passphrase and salt using PBKDF2
+ * @param {string} passphrase - Passphrase to derive a key from
+ * @param {ArrayBuffer} salt - Salt to use when deriving the key, must be cryptographically random
+ * @returns {Promise<CryptoKey>} AES key
+ * @private
+ */
+async function deriveTempKey (passphrase, salt) {
   // Create a key object from the passphrase
   const passKey = await passToKey(passphrase);
 
@@ -52,13 +91,57 @@ async function deriveTempKey (salt, passphrase) {
   );
 }
 
-export function cryptoCheck () {
+/**
+ * @typedef {Object} webCryptoSupportInfo
+ * @property {boolean} isSupported - Whether or not WebCrypto is supported
+ * @property {message?} - Error message (only present if WebCrypto support is not present)
+ */
+
+/**
+ * Checks whether the browser has support for the WebCrypto API
+ * @returns {webCryptoSupportInfo}
+ * @private
+ */
+function cryptoCheck () {
   if (!crypto) {
-    throw new Error('No clientside WebCrypto support is detected. Please update your browser to the most recent version, or try using a different browser');
+    return {
+      isSupported: false,
+      message: 'WebCrypto is not supported in this browser'
+    };
+  }
+  else {
+    return {
+      isSupported: true
+    };
   }
 }
 
+/**
+ * @typedef {Object} Keys
+ * @property {string} publicKey - RSA public key exported as SPKI and encoded with Base64
+ * @property {string} privateKey - RSA private key exported as pkcs8 and encoded with Base64
+ * @property {string} encryptedPrivateKey - RSA private key exported as pkcs8,
+ * encrypted using AES-GCM, and encoded with Base64
+ */
+
+/**
+ * @typedef {Object} KeyInfo
+ * @property {Keys} keys - Public, private, and encrypted private RSA keys
+ * @property {string} PBKDF2salt - Salt used in PBKDF2 along with the passphrase
+ * to decrypt the RSA private key
+ */
+
+/**
+ * Generates and exports a 4096-bit RSA keypair in multiple formats
+ * @param {String} passphrase - The passphrase to use as a key in encrypting the private key
+ * @returns {KeyInfo} KeyInfo object for clientside processing
+ * @public
+ */
 export async function generateMasterKeypair (passphrase) {
+  // Check for WebCrypto support
+  if (!cryptoCheck().isSupported) {
+    throw new Error(cryptoCheck().message);
+  }
   // Don't generate a key with a null passphrase
   if (!passphrase.length) {
     throw new Error('A passphrase is required');
@@ -68,7 +151,7 @@ export async function generateMasterKeypair (passphrase) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
 
   // Derive a temporary 128-bit AES key from the user's password and salt
-  const tempKey = await deriveTempKey(salt, passphrase);
+  const tempKey = await deriveTempKey(passphrase, salt);
 
   // Generate the keypair
   const publicExponent = new Uint8Array([0x01, 0x00, 0x01]); // 65537, standard RSA public exponent
@@ -80,18 +163,20 @@ export async function generateMasterKeypair (passphrase) {
       hash: 'SHA-512'
     },
     true, // The RSA keypair will become the user's master keypair, and must be extractable for storage
-    ['wrapKey', 'unwrapKey'] // The allowed usages for this key is to encrypt and decrypt other keys
+    ['wrapKey', 'unwrapKey'] // The allowed usages for these keys is to encrypt and decrypt other keys
   );
 
   /* Generate a random 96 bit IV for usage in encrypting the private key
   (AES-GCM specifies the use of a 96 bit IV) */
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
-  // Export and Encrypt the private key using AES-GCM and encode it using base64
-  const exportedPrivateKey = await crypto.subtle.exportKey(
+  /* Make two copies of the private key, one encoded but not encrypted,
+  and the other encoded and wrapped. The unencrypted key is stored clientside,
+  and the encrypted/wrapped key is stored serverside */
+  const exportedPrivateKey = ABencode(await crypto.subtle.exportKey(
     'pkcs8',
     privateKey
-  );
+  ));
   const encryptedPrivateKey = await crypto.subtle.wrapKey(
     'pkcs8',
     privateKey,
@@ -102,59 +187,69 @@ export async function generateMasterKeypair (passphrase) {
     }
   );
 
-  // Prepend the IV before the encrypted key
-  const concatenatedPrivateKey = new Uint8Array(iv.byteLength + encryptedPrivateKey.byteLength);
-  concatenatedPrivateKey.set(iv, 0);
-  concatenatedPrivateKey.set(new Uint8Array(encryptedPrivateKey), iv.byteLength);
+  // Prepend the IV before the encrypted key, then encode the buffer in base64
+  const storeablePrivateKey = ABencode(ABconcat(iv, encryptedPrivateKey));
 
   // Export the public key
-  const exportedPublicKey = await crypto.subtle.exportKey(
+  const exportedPublicKey = ABencode(await crypto.subtle.exportKey(
     'spki',
     publicKey
-  );
+  ));
+
+  // Encode the PBKDF2 salt for storage
+  const encodedSalt = ABencode(salt);
 
   return {
     keys: {
-      publicKey: encode(exportedPublicKey),
-      privateKey: encode(exportedPrivateKey),
-      encryptedPrivateKey: encode(concatenatedPrivateKey)
+      publicKey: exportedPublicKey,
+      privateKey: exportedPrivateKey,
+      encryptedPrivateKey: storeablePrivateKey
     },
-    PBKDF2salt: encode(salt),
-    iv: encode(iv)
+    PBKDF2salt: encodedSalt,
+    iv: ABencode(iv)
   };
 };
 
-export function decodePublicKey (publicKey) {
-  if (typeof publicKey !== 'string') {
-    throw new TypeError('Public key must be base64 encoded in the form of a string');
-  }
+/**
+ * Decode and import a public RSA key from a Base64 string
+ * @param {string} publicKey - Base64 encoded public RSA key
+ * @returns {CryptoKey} KeyObject instance, usable for encrypting data or wrapping other keys
+ */
+export function importPublicKey (encodedPublicKey) {
+  const publicKey = ABdecode(encodedPublicKey);
+
   return crypto.subtle.importKey(
     'spki',
-    decode(publicKey),
+    publicKey,
     {
       name: 'RSA-OAEP',
       hash: 'SHA-512'
     },
-    0,
+    0, // Not exportable
     ['encrypt', 'wrapKey']
   );
 }
 
+/**
+ * Encrypt text with a public CryptoKey instance
+ * (not for encrypting other keys)
+ * @param {string} text - Text to be encrypted
+ * @param {CryptoKey} publicKey - Public RSA key with 'encrypt' allowed as a usage
+ * @returns {string} Base64 encoded ciphertext
+ * @public
+ */
 export async function publicEncrypt (text, publicKey) {
-  // Decode and import the privade key if it isn't provided as a usable CryptoKey instance
-  const usablePublicKey = (publicKey instanceof CryptoKey) ? publicKey : await decodePublicKey(publicKey);
-
   // Encode the data into a buffer
   const enc = new TextEncoder();
   const buf = enc.encode(text);
 
-  const ciphertext = await crypto.subtle.encrypt(
+  const ciphertext = ABencode(await crypto.subtle.encrypt(
     {
       name: 'RSA-OAEP'
     },
-    usablePublicKey,
+    publicKey,
     buf
-  );
+  ));
 
-  return encode(ciphertext);
+  return ciphertext;
 };

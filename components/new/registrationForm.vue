@@ -79,6 +79,9 @@ export default {
         return;
       }
 
+      // Clear any errors from a previous submission
+      this.error = null;
+
       // Create the user's account
       await _auth.register(this.$axios, {
         email: this.fields.email,

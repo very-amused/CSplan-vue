@@ -1,22 +1,25 @@
 <template lang="pug">
   div
     b-steps(v-model="activeStep" :has-navigation="false")
-      b-step-item(label="Registration" icon="account" :type="steps.registration.type")
-      b-step-item(label="Login" :type="steps.login.type" icon="account-check")
-      b-step-item(label="Secure Key Generation" :type="steps.keygen.type" icon="lock")
-      b-step-item(label="Personalization" icon="pencil")
+      b-step-item(label="Registration" :type="steps.registration.type" :clickable="false" icon="account")
+      b-step-item(label="Login" :type="steps.login.type" :clickable="false" icon="account-check")
+      b-step-item(label="Secure Key Generation" :type="steps.keygen.type" :clickable="false" icon="lock")
+      b-step-item(label="Personalize" :clickable="true" icon="pencil")
     div(class="columns is-centered is-vcentered")
       div(class="column is-narrow")
-        registration-form(@success="registerSuccess($event)" @error="registerError($event)")
+        registration-form(v-show="activeStep < 3" @success="registerSuccess($event)" @error="registerError($event)")
+        personalization-form(v-show="activeStep === 3")
 </template>
 
 <script>
 import registrationForm from '~/components/new/registrationForm';
+import personalizationForm from '~/components/new/personalizationForm';
 export default {
   layout: 'new',
 
   components: {
-    registrationForm
+    registrationForm,
+    personalizationForm
   },
 
   data () {

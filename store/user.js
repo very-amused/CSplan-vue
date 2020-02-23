@@ -22,7 +22,7 @@ export const mutations = {
     state.token = token;
   },
   /**
-   *
+   * Set the user's keypair
    * @param state - Vuex state
    * @param {Keys} keys - Keypair for the user
    */

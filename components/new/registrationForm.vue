@@ -1,7 +1,7 @@
 <template lang="pug">
   div(class="card")
     div(class="card-content")
-      div(v-show="activeStep === 0" class="media-content")
+      div(class="media-content")
         header(class="title is-3") Create an Account
         b-field(label="Email")
           b-input(v-model="fields.email" id="emailInput" type="email" icon="at")
@@ -15,17 +15,14 @@
             b-icon(icon="alert-circle" type="is-danger")
           div(class="media-content")
           p(class="has-text-danger errorMsg") {{ error }}
-
-      div(v-show="activeStep === 1" class="media-content")
-        b-progress(v-show="activeStep === 1" class="progressBar" type="is-primary" size="is-large" show-value) Logging into your account
 </template>
 
 <script>
 import * as _auth from '~/middleware/handlers/auth';
+import * as _crypto from '~/middleware/crypto';
 export default {
   data () {
     return {
-      activeStep: 0,
       fields: {
         email: '',
         password: ''
@@ -90,7 +87,14 @@ export default {
         .catch((err) => {
           // Set the error message to the 'message' prop returned by the API
           this.error = err.data.message || 'An unknown error occured, refresh the page and try again.';
+          this.$emit('error', 'registration');
         });
+      if (this.error) {
+        return;
+      }
+
+      /* Emit the success event if no errors occured in submission */
+      this.$emit('success', 'registration');
 
       // Log the user in
       const token = await _auth.login(this.$axios, {
@@ -99,16 +103,47 @@ export default {
       })
         .catch((err) => {
           this.error = err.data.message || 'An unknown error occured, refresh the page and try again.';
+          this.$emit('error', 'keygen');
+        });
+      if (this.error) {
+        return;
+      }
+
+      this.$store.commit('user/setToken', token); // Store the token in the Vuex state
+      this.$emit('success', 'login');
+
+      // Pass the handling logic to the keyGenerate function
+      this.keyGenerate();
+    },
+    /**
+     * @private
+     */
+    async keyGenerate () {
+      const keyInfo = await _crypto.generateMasterKeypair(this.fields.password)
+        .catch((err) => {
+          this.error = err.message || 'An unknown error occured, refresh the page and try again.';
+          this.$emit('error', 'keygen');
+        });
+      if (this.error) {
+        return;
+      }
+
+      // Store the pubkey and unencrypted private key in the Vuex state
+      this.$store.commit('user/setKeys', {
+        publicKey: keyInfo.keys.publicKey,
+        privateKey: keyInfo.keys.privateKey
+      });
+
+      // Submit the pubkey, encrypted private key, and PBKDF2 salt to the server for storage
+      await _auth.storeKeypair(this.$axios, { ...keyInfo.keys }, keyInfo.PBKDF2salt)
+        .catch((err) => {
+          this.error = err.data.message || 'An unknown error occured, refresh the page and try again.';
+          this.$emit('error', 'keygen');
         });
 
-      /* Emit the success event if no errors occured in submission */
+      // Emit the success event if no errors occured
       if (!this.error) {
-        this.$store.commit('user/setToken', token); // Store the token in the Vuex state
-        this.$emit('success');
-      }
-      // Else emit the error event
-      else {
-        this.$emit('error');
+        this.$emit('success', 'keygen');
       }
     }
   }

@@ -134,7 +134,7 @@ function cryptoCheck () {
 /**
  * Generates and exports a 4096-bit RSA keypair in multiple formats
  * @param {String} passphrase - The passphrase to use as a key in encrypting the private key
- * @returns {KeyInfo} KeyInfo object for clientside processing
+ * @returns {Promise<KeyInfo>} KeyInfo object for clientside processing
  * @public
  */
 export async function generateMasterKeypair (passphrase) {
@@ -143,8 +143,8 @@ export async function generateMasterKeypair (passphrase) {
     throw new Error(cryptoCheck().message);
   }
   // Don't generate a key with a null passphrase
-  if (!passphrase.length) {
-    throw new Error('A passphrase is required');
+  if (!passphrase || !passphrase.length) {
+    throw new Error('The passphrase must not be empty');
   }
 
   // Generate a 128-bit/16-byte salt
@@ -190,7 +190,7 @@ export async function generateMasterKeypair (passphrase) {
   // Prepend the IV before the encrypted key, then encode the buffer in base64
   const storeablePrivateKey = ABencode(ABconcat(iv, encryptedPrivateKey));
 
-  // Export the public key
+  // Export + encode the public key
   const exportedPublicKey = ABencode(await crypto.subtle.exportKey(
     'spki',
     publicKey

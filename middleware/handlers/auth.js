@@ -11,7 +11,7 @@ import AxiosStatic from 'axios';
  * Register a user's new account
  * @param {AxiosStatic} axios - Nuxt Axios instance
  * @param {UserBody} user
- * @returns {AxiosPromise} Axios Response
+ * @returns {Promise} Axios Response
  */
 export async function register (axios, user) {
   // Post the user's info to the API
@@ -47,5 +47,44 @@ export async function login (axios, user) {
       throw err.response || err;
     });
 
-  return response.data.data.token;
+  // Set the default Authorization header to the token
+  const token = response.data.data.token;
+  axios.defaults.headers.common.Authorization = token;
+
+  return token;
+}
+
+/**
+ * @typedef {Object} Keys
+ * @property {string} publicKey - RSA public key exported as SPKI and encoded with Base64
+ * @property {string} privateKey - RSA private key exported as pkcs8 and encoded with Base64
+ * @property {string} encryptedPrivateKey - RSA private key exported as pkcs8,
+ * encrypted using AES-GCM, and encoded with Base64
+ */
+
+/**
+ *
+ * @param {AxiosStatic} axios - Nuxt Axios instance
+ * @param {Keys} keys - RSA keypair
+ * @param {string} PBKDF2salt - Salt used in PBKDF2 generation of the private key decryptor
+ * @returns {Promise} Axios response
+ */
+export async function storeKeypair (axios, keys, PBKDF2salt) {
+  const response = await axios({
+    method: 'POST',
+    url: '/API/me/keys',
+    data: {
+      PBKDF2salt,
+      publicKey: keys.publicKey,
+      // Only the encrypted version of the private key is sent to the server
+      privateKey: keys.encryptedPrivateKey,
+      // This tells the server that the private key it's receiving was encrypted (and IV concatenated) clientside
+      isEncrypted: true
+    }
+  })
+    .catch((err) => {
+      throw err.response || err;
+    });
+
+  return response;
 }

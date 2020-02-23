@@ -9,8 +9,22 @@
             b-input(placeholder="First Name (optional)")
           b-field
             b-input(placeholder="Last Name (optional)")
-          b-button(id="submitButton" type="is-success" icon-right="arrow-right") Next
+          b-button(type="is-success" @click="submit" icon-right="arrow-right") Next
 </template>
+
+<script>
+export default {
+  methods: {
+    submit () {
+      // ADD: encrypt first and last name using the user's public key and submit to backend
+
+      /* Redirect the user back to the landing page
+      (without leaving a history entry for the login page) */
+      this.$router.replace('/');
+    }
+  }
+};
+</script>
 
 <style scoped>
 .card {

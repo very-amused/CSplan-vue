@@ -3,7 +3,7 @@
     b-steps(v-model="activeStep" :has-navigation="false")
       b-step-item(label="Registration" :type="steps.registration.type" :clickable="false" icon="account")
       b-step-item(label="Login" :type="steps.login.type" :clickable="false" icon="account-check")
-      b-step-item(label="Secure Key Generation" :type="steps.keygen.type" :clickable="false" icon="lock")
+      b-step-item(label="Secure Key Generation" :type="steps.keygen.type" :clickable="true" icon="lock")
       b-step-item(label="Personalize" :clickable="true" icon="pencil")
     div(class="columns is-centered is-vcentered")
       div(class="column is-narrow")

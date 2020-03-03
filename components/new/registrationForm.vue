@@ -1,7 +1,7 @@
 <template lang="pug">
   div(class="card")
     div(class="card-content")
-      div(class="media-content")
+      article(v-if="!showKeygenLoading" class="media-content")
         header(class="title is-3") Create an Account
         b-field(label="Email")
           b-input(v-model="fields.email" id="emailInput" type="email" icon="at")
@@ -15,11 +15,14 @@
             b-icon(icon="alert-circle" type="is-danger")
           div(class="media-content")
           p(class="has-text-danger errorMsg") {{ error }}
+      article(v-else class="media-content")
+        header(class="title is-4") Generating your secure master keypair...
+        b-progress(type="is-success")
 </template>
 
 <script>
-import * as _auth from '~/middleware/handlers/auth';
-import * as _crypto from '~/middleware/crypto';
+import * as _auth from '~/_middleware/handlers/auth';
+import * as _crypto from '~/_middleware/crypto';
 export default {
   data () {
     return {
@@ -27,7 +30,8 @@ export default {
         email: '',
         password: ''
       },
-      error: null
+      error: null,
+      showKeygenLoading: false
     };
   },
 
@@ -97,7 +101,7 @@ export default {
       }
 
       /* Emit the success event if no errors occured in submission */
-      this.$emit('success', 'registration');
+      await this.$emit('success', 'registration');
 
       // Log the user in
       const token = await _auth.login(this.$axios, {
@@ -113,7 +117,7 @@ export default {
       }
 
       this.$store.commit('user/setToken', token); // Store the token in the Vuex state
-      this.$emit('success', 'login');
+      await this.$emit('success', 'login');
 
       // Pass the handling logic to the keyGenerate function
       this.keyGenerate();
@@ -122,6 +126,10 @@ export default {
      * @private
      */
     async keyGenerate () {
+      // Show the key generation loading bar
+      this.showKeygenLoading = true;
+
+      // Generate the user's master keypair
       const keyInfo = await _crypto.generateMasterKeypair(this.fields.password)
         .catch((err) => {
           this.error = err.message || 'An unknown error occured, refresh the page and try again.';
@@ -146,7 +154,7 @@ export default {
 
       // Emit the success event if no errors occured
       if (!this.error) {
-        this.$emit('success', 'keygen');
+        await this.$emit('success', 'keygen');
       }
     }
   }

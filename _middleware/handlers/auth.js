@@ -38,10 +38,7 @@ export async function login (axios, user) {
   const response = await axios({
     method: 'POST',
     url: '/API/login',
-    data: {
-      email: user.email,
-      password: user.password
-    }
+    data: user
   })
     .catch((err) => {
       throw err.response || err;
@@ -77,9 +74,11 @@ export async function storeKeypair (axios, keys, PBKDF2salt) {
       PBKDF2salt,
       publicKey: keys.publicKey,
       // Only the encrypted version of the private key is sent to the server
-      privateKey: keys.encryptedPrivateKey,
-      // This tells the server that the private key it's receiving was encrypted (and IV concatenated) clientside
-      isEncrypted: true
+      privateKey: keys.encryptedPrivateKey
+    },
+    headers: {
+      // Directive tells the server to not encrypt the information
+      'X-Encrypt': false
     }
   })
     .catch((err) => {
@@ -87,4 +86,4 @@ export async function storeKeypair (axios, keys, PBKDF2salt) {
     });
 
   return response;
-}
+};

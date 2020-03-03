@@ -9,7 +9,8 @@ export const state = () => ({
   keys: {
     publicKey: '',
     privateKey: ''
-  }
+  },
+  displayName: ''
 });
 
 export const mutations = {
@@ -28,5 +29,13 @@ export const mutations = {
    */
   setKeys (state, keys) {
     state.keys = { ...keys };
+  },
+  /**
+   * Set the user's display name
+   * @param {*} state - Vuex state
+   * @param {*} displayName - Display name (first + last or username)
+   */
+  setDisplayName (state, displayName) {
+    state.displayName = displayName;
   }
 };

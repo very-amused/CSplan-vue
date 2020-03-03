@@ -231,6 +231,26 @@ export function importPublicKey (encodedPublicKey) {
 }
 
 /**
+ * Decode and import a private RSA key from a Base64 string
+ * @param {string} encodedPrivateKey - Base64 encoded private RSA key
+ * @returns {CryptoKey} KeyObject instance, usable for decrypting data or unwrapping other keys
+ */
+export function importPrivateKey (encodedPrivateKey) {
+  const privateKey = ABdecode(encodedPrivateKey);
+
+  return crypto.subtle.importKey(
+    'pkcs8',
+    privateKey,
+    {
+      name: 'RSA-OAEP',
+      hash: 'SHA-512'
+    },
+    0, // Not exportable
+    ['decrypt']
+  );
+}
+
+/**
  * Encrypt text with a public CryptoKey instance
  * (not for encrypting other keys)
  * @param {string} text - Text to be encrypted
@@ -252,4 +272,30 @@ export async function publicEncrypt (text, publicKey) {
   ));
 
   return ciphertext;
+};
+
+/**
+ * Decrypt text with a private CryptoKey instance
+ * (not for decrypting other keys)
+ * @param {string} base64 - Base64 encoded ciphertext
+ * @param {CryptoKey} privateKey - Private RSA key with 'decrypt' allowed as a usage
+ * @returns {string} Plaintext
+ * @public
+ */
+export async function privateDecrypt (base64, privateKey) {
+  // Decode the data from base64
+  const buf = ABdecode(base64);
+
+  const plainbuf = await crypto.subtle.decrypt(
+    {
+      name: 'RSA-OAEP'
+    },
+    privateKey,
+    buf
+  );
+
+  const dec = new TextDecoder('utf-8');
+  const plaintext = dec.decode(plainbuf);
+
+  return plaintext;
 };

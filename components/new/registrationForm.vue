@@ -18,6 +18,7 @@
       article(v-else class="media-content")
         header(class="title is-4") Generating your secure master keypair...
         b-progress(type="is-success")
+        p(class="has-text-danger errorMsg") {{ error }}
 </template>
 
 <script>
@@ -116,7 +117,12 @@ export default {
         return;
       }
 
-      this.$store.commit('user/setToken', token); // Store the token in the Vuex state
+      // Store the token in the cookies (expires after a week)
+      if (this.$cookie.get('Authorization')) {
+        this.$cookie.delete('Authorization');
+      }
+      this.$cookie.set('Authorization', token, { expires: 7 });
+
       await this.$emit('success', 'login');
 
       // Pass the handling logic to the keyGenerate function
@@ -148,7 +154,7 @@ export default {
       // Submit the pubkey, encrypted private key, and PBKDF2 salt to the server for storage
       await _auth.storeKeypair(this.$axios, { ...keyInfo.keys }, keyInfo.PBKDF2salt)
         .catch((err) => {
-          this.error = err.data.message || 'An unknown error occured, refresh the page and try again.';
+          this.error = err.data ? err.data.message : 'An unknown error occured, refresh the page and try again.';
           this.$emit('error', 'keygen');
         });
 

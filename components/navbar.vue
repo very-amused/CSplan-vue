@@ -2,7 +2,7 @@
   b-navbar(type="is-dark")
     template(slot="start")
       b-navbar-item(tag="nuxt-link" to="/") Dashboard
-      b-navbar-item(tag="nuxt-link" to="/") Todos
+      b-navbar-item(tag="nuxt-link" to="/todos") Todos
       b-navbar-item(tag="nuxt-link" to="/") Calendar
     template(slot="end")
       b-navbar-dropdown(v-if="user.isLoggedIn" right :label="user.displayName")
@@ -19,6 +19,7 @@ export default {
   data () {
     return {
       user: {
+        // Default props for SSR
         isLoggedIn: true,
         isLoading: true,
         displayName: ''

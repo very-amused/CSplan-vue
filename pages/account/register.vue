@@ -12,11 +12,9 @@
 </template>
 
 <script>
-import registrationForm from '~/components/new/registrationForm';
-import personalizationForm from '~/components/new/personalizationForm';
+import registrationForm from '~/components/register/registrationForm';
+import personalizationForm from '~/components/register/personalizationForm';
 export default {
-  layout: 'new',
-
   components: {
     registrationForm,
     personalizationForm

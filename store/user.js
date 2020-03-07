@@ -38,6 +38,7 @@ export const mutations = {
    * @param {UserState} state
    */
   login (state) {
+    localStorage.setItem('isLoggedIn', true);
     state.isLoggedIn = true;
   },
   /**
@@ -45,6 +46,7 @@ export const mutations = {
    * @param {UserState} state
    */
   logout (state) {
+    localStorage.setItem('isLoggedIn', false);
     state.isLoggedIn = false;
   },
   /**

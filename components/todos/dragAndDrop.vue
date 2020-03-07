@@ -1,46 +1,13 @@
 <template lang="pug">
   div(class="todo-container")
-    div(class="card" v-for="(list, index) in todoLists" :key="index")
-      div(class="card-content" draggable="true" :index="index")
-        article(class="media-content")
-          header(class="title is-3") {{ list.title }}
-          hr
-          div(v-for="(todo, index) in list.items" class="media" :key="index")
-            figure(class="media-left")
-              b-button(rounded :type="{'is-primary': todo.completed}" :outlined="!todo.completed")
-            article(class="media-content")
-              span(class="has-text-weight-bold" type="is-primary") {{ todo.title }}
-              br
-              span {{ todo.description }}
-            figure(class="media-right")
-              b-button(@click="removeItem(list, index)" type="is-text")
-                b-icon(icon="close" size="is-small")
-        hr(v-if="list.items.length > 0")
-        form(action="")
-          template(v-if="!list.showForm")
-            b-button(@click="list.showForm = true" type="is-grey" outlined expanded)
-              b-icon(icon="plus")
-          template(v-else)
-            b-button(@click="list.showForm = false" type="is-text")
-              b-icon(icon="close")
-            b-field
-              b-input(v-model="list.formInputs.title" placeholder="Title" required)
-            b-field
-              b-input(v-model="list.formInputs.description" placeholder="Description (optional)")
-            b-button(@click="addItem(list)" type="is-primary" expanded)
-              b-icon(icon="plus")
-      hr(class="drop-indicator")
+    todo-list
 </template>
 
 <script>
+import todoList from '~/components/todos/list';
 export default {
-  props: {
-    todoLists: {
-      type: Array,
-      default () {
-        return [];
-      }
-    }
+  components: {
+    todoList
   },
 
   mounted () {
@@ -106,19 +73,6 @@ export default {
         target.splice(origin + 1, 1); // Seek and destroy with the frameshifted index of the origin
       }
       this.todoLists = target;
-    },
-    addItem (list) {
-      list.items.push({ ...list.formInputs });
-      // Clear the form inputs and hide the formafter adding
-      list.formInputs = {
-        title: '',
-        description: ''
-      };
-      list.showForm = false;
-    },
-    removeItem (list, index) {
-      console.log(list);
-      list.items.splice(index, 1);
     }
   }
 };

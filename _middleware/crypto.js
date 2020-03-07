@@ -58,7 +58,7 @@ function passToKey (passphrase) {
     {
       name: 'PBKDF2'
     },
-    1,
+    0, // This key cannot be extractable
     ['deriveKey'] // This key may only be used to derive a new, more secure key using PBKDF2
   );
 }
@@ -233,7 +233,7 @@ export function importPublicKey (encodedPublicKey) {
 /**
  * Decode and import a private RSA key from a Base64 string
  * @param {string} encodedPrivateKey - Base64 encoded private RSA key
- * @returns {CryptoKey} KeyObject instance, usable for decrypting data or unwrapping other keys
+ * @returns {Promise<CryptoKey>} KeyObject instance, usable for decrypting data or unwrapping other keys
  */
 export function importPrivateKey (encodedPrivateKey) {
   const privateKey = ABdecode(encodedPrivateKey);
@@ -255,7 +255,7 @@ export function importPrivateKey (encodedPrivateKey) {
  * (not for encrypting other keys)
  * @param {string} text - Text to be encrypted
  * @param {CryptoKey} publicKey - Public RSA key with 'encrypt' allowed as a usage
- * @returns {string} Base64 encoded ciphertext
+ * @returns {Promise<string>} Base64 encoded ciphertext
  * @public
  */
 export async function publicEncrypt (text, publicKey) {
@@ -279,7 +279,7 @@ export async function publicEncrypt (text, publicKey) {
  * (not for decrypting other keys)
  * @param {string} base64 - Base64 encoded ciphertext
  * @param {CryptoKey} privateKey - Private RSA key with 'decrypt' allowed as a usage
- * @returns {string} Plaintext
+ * @returns {Promise<string>} Plaintext
  * @public
  */
 export async function privateDecrypt (base64, privateKey) {

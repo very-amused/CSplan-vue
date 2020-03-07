@@ -35,15 +35,14 @@ export default {
   */
   plugins: [
     '~/plugins/vue-cookie',
-    { src: '~/plugins/vuexInit.js', mode: 'client' }
+    { src: '~/plugins/stateInit.js', mode: 'client' }
   ],
   /*
   ** Nuxt.js dev-modules
   */
   buildModules: [
     // Doc: https://github.com/nuxt-community/eslint-module
-    '@nuxtjs/eslint-module',
-    '@nuxtjs/vuetify'
+    '@nuxtjs/eslint-module'
   ],
   /*
   ** Nuxt.js modules

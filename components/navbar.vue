@@ -1,66 +1,43 @@
-<template lang="pug">
+<template ref="navbar" lang="pug">
   b-navbar(type="is-dark")
     template(slot="start")
       b-navbar-item(tag="nuxt-link" to="/") Dashboard
       b-navbar-item(tag="nuxt-link" to="/") Todos
       b-navbar-item(tag="nuxt-link" to="/") Calendar
     template(slot="end")
-      b-navbar-item(tag="div")
-        div(v-if="user.name")
-          b-button(type="is-info") {{ user.name }}
-        div(v-else class="buttons")
-          b-button(tag="nuxt-link" to="/account/register" type="is-light" rounded) Register
-          b-button(type="is-primary" rounded) Log in
+      b-navbar-dropdown(v-if="user.isLoggedIn" right :label="user.displayName")
+        b-navbar-item(@click="logout") Sign Out
+      b-navbar-item(v-else tag="div" class="buttons")
+        b-button(tag="nuxt-link" to="/account/register" type="is-light" rounded) Register
+        b-button(type="is-primary" rounded) Log in
 </template>
 
 <script>
-import { importPrivateKey, privateDecrypt } from '~/_middleware/crypto';
-import { getName } from '~/_middleware/handlers/name';
+import { logout } from '~/_middleware/handlers/auth';
+import { UserState } from '~/store/user'; // eslint-disable-line
 export default {
   data () {
     return {
       user: {
-        name: ''
+        isLoggedIn: true,
+        isLoading: true,
+        displayName: ''
       }
     };
   },
 
-  async mounted () {
-    let d;
-    try {
-      d = await getName(this.$axios);
-    }
-    catch {
-      // The user is not logged in
-      return;
-    }
+  mounted () {
+    this.$store.commit('user/getName', this.$axios);
+    // Update the user info
+    this.user = this.$store.state.user;
+  },
 
-    // User with personal info that needs to be decrypted
-    if (d.username || d.firstName || d.lastName) {
-      const encodedPrivateKey = this.$store.state.user.keys.privateKey;
-      // Import the user's private key
-      const privateKey = await importPrivateKey(encodedPrivateKey);
-
-      // Decrypt relevant properties
-      let firstName;
-      let lastName;
-      let username;
-      if (d.firstName) {
-        firstName = await privateDecrypt(d.firstName, privateKey);
-      }
-      if (d.lastName) {
-        lastName = await privateDecrypt(d.lastName, privateKey);
-      }
-      if (d.username) {
-        username = await privateDecrypt(d.username, privateKey);
-      }
-
-      const displayName = username || `${firstName || ''}${lastName ? ' ' + lastName : ''}`;
-      this.user.name = displayName;
-    }
-    // Anonymous user
-    else {
-      this.user.name = 'Anonymous user';
+  methods: {
+    async logout () {
+      // Log the user out from the API
+      await logout(this.$axios);
+      // Log the user out in the state
+      this.$store.commit('user/logout');
     }
   }
 };

@@ -77,6 +77,13 @@ export default {
           });
         });
 
+      // Set the user's displayname in the vuex state
+      this.$store.commit('user/setName', {
+        firstName: this.fields.firstName,
+        lastName: this.fields.lastName,
+        username: this.fields.username
+      });
+
       /* Redirect the user back to the landing page
       (without leaving a history entry for the login page) */
       if (!this.error) {

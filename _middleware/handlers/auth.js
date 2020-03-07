@@ -31,10 +31,11 @@ export async function register (axios, user) {
 
 /**
  * @param {AxiosStatic} axios - Nuxt Axios instance
+ * @param store - VueX store
  * @param {UserBody} user
  * @returns {Promise<string>} The user's authentication token, valid for 1 week
  */
-export async function login (axios, user) {
+export async function login (axios, store, user) {
   const response = await axios({
     method: 'POST',
     url: '/API/login',
@@ -44,11 +45,10 @@ export async function login (axios, user) {
       throw err.response || err;
     });
 
-  // Set the default Authorization header to the token
-  const token = response.data.data.token;
-  axios.defaults.headers.common.Authorization = token;
+  // Alert components that the user has been logged in
+  store.commit('user/login');
 
-  return token;
+  return response.data.data.token;
 }
 
 /**
@@ -87,3 +87,23 @@ export async function storeKeypair (axios, keys, PBKDF2salt) {
 
   return response;
 };
+
+/**
+ * Log the user out
+ * @param {AxiosStatic} axios
+ */
+export async function logout (axios) {
+  // Delete locally stored keys
+  localStorage.removeItem('store');
+
+  // Logout the user from the API
+  const response = await axios({
+    method: 'POST',
+    url: '/API/logout'
+  })
+    .catch((err) => {
+      throw err.response || err;
+    });
+
+  return response;
+}

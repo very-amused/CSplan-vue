@@ -105,7 +105,7 @@ export default {
       await this.$emit('success', 'registration');
 
       // Log the user in
-      const token = await _auth.login(this.$axios, {
+      const token = await _auth.login(this.$axios, this.$store, {
         email: this.fields.email,
         password: this.fields.password
       })
@@ -123,6 +123,10 @@ export default {
       }
       this.$cookie.set('Authorization', token, { expires: 7 });
 
+      this.$store.commit('user/login');
+      this.$store.commit('user/setName', {
+        username: 'Anonymous User'
+      });
       await this.$emit('success', 'login');
 
       // Pass the handling logic to the keyGenerate function
@@ -145,11 +149,13 @@ export default {
         return;
       }
 
-      // Store the pubkey and unencrypted private key in the Vuex state
-      this.$store.commit('user/setKeys', {
+      /* Store the pubkey and unencrypted private key in the localStorage,
+      and load them into the Vuex state */
+      localStorage.setItem('keys', JSON.stringify({
         publicKey: keyInfo.keys.publicKey,
         privateKey: keyInfo.keys.privateKey
-      });
+      }));
+      this.$store.commit('user/getKeys');
 
       // Submit the pubkey, encrypted private key, and PBKDF2 salt to the server for storage
       await _auth.storeKeypair(this.$axios, { ...keyInfo.keys }, keyInfo.PBKDF2salt)

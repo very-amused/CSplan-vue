@@ -1,5 +1,5 @@
-// eslint-disable-next-line
-import AxiosStatic from 'axios';
+import AxiosStatic from 'axios'; // eslint-disable-line
+import store from 'vuex'; // eslint-disable-line
 
 /**
  * @typedef {Object} NameBody - JSON body representing a user's identifying name

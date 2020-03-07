@@ -14,7 +14,6 @@
 
 <script>
 import { logout } from '~/_middleware/handlers/auth';
-import { UserState } from '~/store/user'; // eslint-disable-line
 export default {
   data () {
     return {
@@ -23,7 +22,8 @@ export default {
         isLoggedIn: true,
         isLoading: true,
         displayName: ''
-      }
+      },
+      activeItem: ''
     };
   },
 

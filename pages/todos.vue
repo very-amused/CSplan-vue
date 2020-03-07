@@ -1,18 +1,14 @@
 <template lang="pug">
-  div(class="todo-container")
-    div(class="card" v-for="(list, index) in todoLists" :key="index")
-      div(class="card-content" draggable="true" :index="index")
-        article(class="media-content")
-          header(class="title is-3") {{ list.title }}
-          hr
-          div(v-for="todo in list.items" :key="todo.index")
-            span(class="has-text-weight-bold") {{ todo.message }}
-            hr
-      hr(class="drop-indicator")
+  drag-and-drop(:todo-lists="todoLists")
 </template>
 
 <script>
+import dragAndDrop from '~/components/todos/dragAndDrop';
 export default {
+  components: {
+    dragAndDrop
+  },
+
   data () {
     return {
       todoLists: [
@@ -20,115 +16,19 @@ export default {
           title: 'Saturday stuff',
           items: [
             {
-              message: 'Do something'
-            },
-            {
-              message: 'Don\'t do something'
+              title: 'Bruh',
+              description: 'Bruh stuff',
+              completed: false
             }
-          ]
-        },
-        {
-          title: 'Sunday stuff',
-          items: []
-        },
-        {
-          title: 'Monday stuff',
-          items: []
+          ],
+          showForm: false,
+          formInputs: {
+            title: '',
+            description: ''
+          }
         }
       ]
     };
-  },
-
-  mounted () {
-    document.querySelectorAll('.card-content[draggable=true]').forEach((el) => {
-      el.addEventListener('dragstart', this.dragHandler);
-      el.addEventListener('dragend', this.dragEndHandler);
-    });
-    document.querySelectorAll('.card').forEach((el) => {
-      el.addEventListener('dragover', (evt) => {
-        evt.preventDefault();
-
-        // Add hover CSS to the current drop indicator
-        evt.currentTarget.querySelector('.drop-indicator').classList.add('hovered');
-        evt.dataTransfer.dropEffect = 'move';
-      });
-      el.addEventListener('dragleave', (evt) => {
-        evt.preventDefault();
-
-        // Remove hover CSS from the drop indicator
-        evt.currentTarget.querySelector('.drop-indicator').classList.remove('hovered');
-      });
-
-      el.addEventListener('drop', this.dropHandler);
-    });
-  },
-
-  middleware: 'authenticate',
-
-  methods: {
-    dragHandler (evt) {
-      const dt = evt.dataTransfer;
-
-      // Highlight drop points
-      document.querySelectorAll('.drop-indicator').forEach((el) => {
-        el.classList.add('active');
-      });
-
-      const index = event.target.getAttribute('index');
-      dt.setData('text/plain', index);
-      dt.dropEffect = 'move';
-    },
-    dragEndHandler (evt) {
-      document.querySelectorAll('.drop-indicator').forEach((el) => {
-        el.classList.remove('active');
-        el.classList.remove('hovered');
-      });
-    },
-    dropHandler (evt) {
-      const destination = parseInt(evt.currentTarget.querySelector('.card-content').getAttribute('index'));
-      const origin = parseInt(evt.dataTransfer.getData('text/plain'));
-
-      const target = [ ...this.todoLists ];
-
-      // The ole switcharoo/most painful thing I think I've ever had to figure out
-      if (origin < destination) {
-        target.splice(destination + 1, 0, this.todoLists[origin]);
-        target.splice(origin, 1);
-      }
-      else if (origin > destination) {
-        target.splice(destination, 0, this.todoLists[origin]);
-        target.splice(origin + 1, 1);
-      }
-      this.todoLists = target;
-    }
   }
 };
 </script>
-
-<style lang="scss" scoped>
-$card-margin: 1rem;
-.todo-container {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-}
-.card {
-  display: flex;
-  flex-direction: column;
-  min-width: 35%;
-  margin-left: $card-margin;
-  margin-right: $card-margin;
-  margin-top: $card-margin;
-}
-.drop-indicator {
-  margin: 0;
-}
-.drop-indicator.active {
-  background-color: teal;
-}
-.drop-indicator.active.hovered {
-  background-color: blueviolet;
-}
-</style>

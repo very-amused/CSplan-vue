@@ -93,8 +93,9 @@ export async function storeKeypair (axios, keys, PBKDF2salt) {
  * @param {AxiosStatic} axios
  */
 export async function logout (axios) {
-  // Delete locally stored keys
-  localStorage.removeItem('store');
+  // Clear any cached or stored data
+  localStorage.clear();
+  sessionStorage.clear();
 
   // Logout the user from the API
   const response = await axios({

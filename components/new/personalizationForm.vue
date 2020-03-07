@@ -34,6 +34,12 @@ export default {
       // Clear any previous errors
       this.error = null;
 
+      // Skip setting the user's display name if they haven't filled anything out
+      if (!(this.fields.firstName || this.fields.lastName || this.fields.username)) {
+        await this.$router.replace('/');
+        return;
+      }
+
       // ADD: encrypt first and last name using the user's public key and submit to backend
       const publicKey = await _crypto.importPublicKey(this.$store.state.user.keys.publicKey)
         .catch(() => {

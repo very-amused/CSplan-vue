@@ -1,12 +1,12 @@
 <template lang="pug">
-  drag-and-drop
+  tabs
 </template>
 
 <script>
-import dragAndDrop from '~/components/todos/dragAndDrop';
+import tabs from '~/components/todos/tabs';
 export default {
   components: {
-    dragAndDrop
+    tabs
   }
 };
 </script>

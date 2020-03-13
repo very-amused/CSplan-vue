@@ -1,4 +1,3 @@
-export const strict = false;
 import { importPrivateKey, privateDecrypt } from '~/_middleware/crypto'; // eslint-disable-line
 import { getName, NameBody } from '~/_middleware/handlers/name'; // eslint-disable-line
 import { AxiosStatic } from 'axios'; // eslint-disable-line

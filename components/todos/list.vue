@@ -4,7 +4,7 @@
         article(class="media-content")
           header(class="title is-3") {{ title }}
           hr
-          div(v-for="(item, index) in items" class="media" :key="index")
+          div(v-for="(item, index) in items" :key="item.id" class="media")
             figure(class="media-left")
               template(v-if="item.completed")
                 b-button(@click="toggleCompletion(index)" rounded type="is-primary")
@@ -36,16 +36,29 @@
 
 <script>
 export default {
+  props: {
+    id: {
+      type: String,
+      default () {
+        return 0;
+      }
+    },
+    title: {
+      type: String,
+      default () {
+        return 'Untitled List';
+      }
+    },
+    items: {
+      type: Array,
+      default () {
+        return [];
+      }
+    }
+  },
+
   data () {
     return {
-      title: 'Sample List',
-      items: [
-        {
-          title: 'Sample item',
-          description: 'Description',
-          completed: false
-        }
-      ],
       showForm: false,
       formInputs: {
         title: '',
@@ -55,13 +68,14 @@ export default {
   },
 
   methods: {
-    addItem () {
+    async addItem () {
       // Enforce required title field
       if (!this.formInputs.title.length) {
         return;
       }
 
       this.items.push({ ...this.formInputs, completed: false });
+      await this.$emit('update');
       // Clear the form inputs and hide the form after adding the item
       this.formInputs = {
         title: '',
@@ -69,11 +83,13 @@ export default {
       };
       this.showForm = false;
     },
-    toggleCompletion (index) {
+    async toggleCompletion (index) {
       this.items[index].completed = !this.items[index].completed;
+      await this.$emit('update');
     },
-    removeItem (index) {
+    async removeItem (index) {
       this.items.splice(index, 1);
+      await this.$emit('update');
     }
   }
 };

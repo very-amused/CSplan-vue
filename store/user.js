@@ -1,6 +1,6 @@
-import { importPrivateKey, privateDecrypt } from '~/_middleware/crypto'; // eslint-disable-line
-import { getName, NameBody } from '~/_middleware/handlers/name'; // eslint-disable-line
-import { login } from '~/_middleware/handlers/auth';
+import { importPublicKey, publicEncrypt, importPrivateKey, privateDecrypt } from '~/_middleware/crypto'; // eslint-disable-line
+import { setName, getName, NameBody } from '~/_middleware/handlers/name'; // eslint-disable-line
+import { login, logout } from '~/_middleware/handlers/auth';
 import { AxiosStatic } from 'axios'; // eslint-disable-line
 
 /**
@@ -45,30 +45,6 @@ export const mutations = {
       state[key] = val;
       return resolve();
     });
-  },
-  /**
-   * Alert components that the user is logged in
-   * @param {UserState} state
-   */
-  login (state) {
-    localStorage.setItem('isLoggedIn', true);
-    state.isLoggedIn = true;
-  },
-  /**
-   * Alert components that the user is no longer logged in
-   * @param {UserState} state
-   */
-  logout (state) {
-    localStorage.setItem('isLoggedIn', false);
-    state.isLoggedIn = false;
-  },
-  /**
-   * Set the user's display name
-   * @param {UserState} state
-   * @param {NameBody} nb - Name Body
-   */
-  setName (state, nb) {
-    state.displayName = nb.username || `${nb.firstName || ''}${nb.lastName ? ' ' + nb.lastName : ''}`;
   }
 };
 
@@ -100,15 +76,64 @@ export const actions = {
     return token;
   },
 
+  /**
+   * Log out the user
+   */
+  async logout ({ commit }, axios) {
+    await logout(axios);
+    // Clear ALL cache
+    localStorage.clear();
+    sessionStorage.clear();
+    await commit('set', { isLoggedIn: false });
+  },
+
+  /**
+   * Get whether or not the user is logged in
+   */
   async getLoggedInState ({ commit }) {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || false;
     await commit('set', { isLoggedIn });
   },
-  async getKeys ({ commit }) {
+
+  /**
+   * Get the user's keypair
+   */
+  async getKeys ({ commit, dispatch }) {
     if (localStorage.getItem('keys')) {
       await commit('set', { keys: JSON.parse(localStorage.getItem('keys')) });
     }
+    // Log the user out if their keypair has been lost (this renders their session useless)
+    else {
+      await dispatch('logout');
+    }
   },
+
+  /**
+   * Encrypt and set the user's name
+   */
+  async setName ({ commit, state }, { axios, unencryptedBody }) {
+    const { username, firstName, lastName } = unencryptedBody;
+    const publicKey = await importPublicKey(state.keys.publicKey);
+
+    // Encrypt each field that isn't empty
+    const encrypted = {
+      username: '',
+      firstName: '',
+      lastName: ''
+    };
+    for (const field in unencryptedBody) {
+      // Encrypt each field that isn't empty
+      if (unencryptedBody[field].length) {
+        encrypted[field] = await publicEncrypt(unencryptedBody[field], publicKey);
+      }
+    }
+
+    await setName(axios, encrypted);
+    const displayName = username || `${firstName || ''}${lastName ? ' ' + lastName : ''}`;
+    sessionStorage.setItem('displayname', displayName);
+    await commit('set', { displayName });
+  },
+
   /**
    * Retrieve and decrypt the user's name
    * @param {AxiosStatic} axios

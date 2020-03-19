@@ -213,7 +213,7 @@ export async function generateMasterKeypair (passphrase) {
 /**
  * Decode and import a public RSA key from a Base64 string
  * @param {string} publicKey - Base64 encoded public RSA key
- * @returns {CryptoKey} KeyObject instance, usable for encrypting data or wrapping other keys
+ * @returns {Promise<CryptoKey>} KeyObject instance, usable for encrypting data or wrapping other keys
  */
 export function importPublicKey (encodedPublicKey) {
   const publicKey = ABdecode(encodedPublicKey);

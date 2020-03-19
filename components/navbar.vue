@@ -15,7 +15,6 @@
 </template>
 
 <script>
-import { logout } from '~/_middleware/handlers/auth';
 export default {
   data () {
     return {
@@ -37,10 +36,8 @@ export default {
 
   methods: {
     async logout () {
-      // Log the user out from the API
-      await logout(this.$axios);
       // Log the user out in the state
-      this.$store.commit('user/logout');
+      await this.$store.dispatch('user/logout', this.$axios);
     }
   }
 };

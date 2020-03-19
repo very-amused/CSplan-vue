@@ -2,9 +2,9 @@
     div(class="card")
       div(class="card-content" draggable="true")
         article(class="media-content")
-          header(class="title is-3") {{ title }}
+          header(class="title is-3") {{ list.title }}
           hr
-          div(v-for="(item, index) in items" :key="item.id" class="media")
+          div(v-for="(item, index) in list.items" :key="item.id" class="media")
             figure(class="media-left")
               template(v-if="item.completed")
                 b-button(@click="toggleCompletion(index)" rounded type="is-primary")
@@ -18,7 +18,7 @@
             figure(class="media-right")
               b-button(@click="removeItem(index)" type="is-text")
                 b-icon(icon="close" size="is-small")
-        hr(v-if="items.length > 0")
+        hr(v-if="list.items.length > 0")
         form(action="")
           template(v-if="!showForm")
             b-button(@click="showForm = true" type="is-grey" outlined expanded)
@@ -42,18 +42,6 @@ export default {
       default () {
         return 0;
       }
-    },
-    title: {
-      type: String,
-      default () {
-        return 'Untitled List';
-      }
-    },
-    items: {
-      type: Array,
-      default () {
-        return [];
-      }
     }
   },
 
@@ -67,6 +55,13 @@ export default {
     };
   },
 
+  computed: {
+    list () {
+      const index = this.$store.state.todos.findIndex(list => list.id === this.id);
+      return this.$store.state.todos[index];
+    }
+  },
+
   methods: {
     async addItem () {
       // Enforce required title field
@@ -74,8 +69,10 @@ export default {
         return;
       }
 
-      this.items.push({ ...this.formInputs, completed: false });
-      await this.$emit('update');
+      await this.$store.dispatch('todos/addItem', {
+        id: this.id,
+        item: { ...this.formInputs, completed: false }
+      });
       // Clear the form inputs and hide the form after adding the item
       this.formInputs = {
         title: '',
@@ -84,12 +81,16 @@ export default {
       this.showForm = false;
     },
     async toggleCompletion (index) {
-      this.items[index].completed = !this.items[index].completed;
-      await this.$emit('update');
+      await this.$store.dispatch('todos/toggleCompletion', {
+        id: this.id,
+        itemIndex: index
+      });
     },
     async removeItem (index) {
-      this.items.splice(index, 1);
-      await this.$emit('update');
+      await this.$store.dispatch('todos/removeItem', {
+        id: this.id,
+        itemIndex: index
+      });
     }
   }
 };

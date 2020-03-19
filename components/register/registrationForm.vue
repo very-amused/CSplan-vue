@@ -125,11 +125,6 @@ export default {
         this.$cookie.delete('Authorization');
       }
       this.$cookie.set('Authorization', token, { expires: 7 });
-
-      this.$store.commit('user/login');
-      this.$store.commit('user/setName', {
-        username: 'Anonymous User'
-      });
       await this.$emit('success', 'login');
 
       // Pass the handling logic to the keyGenerate function

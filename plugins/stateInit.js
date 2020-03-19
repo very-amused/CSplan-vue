@@ -1,3 +1,3 @@
-export default function ({ store, app }) {
-  store.dispatch('user/init');
+export default async function ({ store, app }) {
+  await store.dispatch('user/init', app.$axios);
 };

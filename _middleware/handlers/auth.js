@@ -14,14 +14,19 @@ import AxiosStatic from 'axios';
  * @returns {Promise} Axios Response
  */
 export async function register (axios, user) {
-  // Post the user's info to the API
-  const response = await axios({
-    method: 'POST',
-    url: '/API/register',
-    data: {
+  const data = {
+    type: 'user',
+    attributes: {
       email: user.email,
       password: user.password
     }
+  };
+
+  // Post the user's info to the API
+  const response = await axios({
+    method: 'POST',
+    url: '/v1/register',
+    data: { data }
   })
     .catch((err) => {
       throw err.response || err;
@@ -31,24 +36,28 @@ export async function register (axios, user) {
 
 /**
  * @param {AxiosStatic} axios - Nuxt Axios instance
- * @param store - VueX store
  * @param {UserBody} user
  * @returns {Promise<string>} The user's authentication token, valid for 1 week
  */
-export async function login (axios, store, user) {
+export async function login (axios, user) {
+  const data = {
+    type: 'user',
+    attributes: {
+      email: user.email,
+      password: user.password
+    }
+  };
+
   const response = await axios({
     method: 'POST',
-    url: '/API/login',
-    data: user
+    url: '/v1/login',
+    data: { data }
   })
     .catch((err) => {
       throw err.response || err;
     });
 
-  // Alert components that the user has been logged in
-  store.commit('user/login');
-
-  return response.data.data.token;
+  return response.data.data.id;
 }
 
 /**
@@ -67,19 +76,20 @@ export async function login (axios, store, user) {
  * @returns {Promise} Axios response
  */
 export async function storeKeypair (axios, keys, PBKDF2salt) {
-  const response = await axios({
-    method: 'POST',
-    url: '/API/me/keys',
-    data: {
+  const data = {
+    type: 'keydata',
+    attributes: {
       PBKDF2salt,
       publicKey: keys.publicKey,
       // Only the encrypted version of the private key is sent to the server
       privateKey: keys.encryptedPrivateKey
-    },
-    headers: {
-      // Directive tells the server to not encrypt the information
-      'X-Encrypt': false
     }
+  };
+
+  const response = await axios({
+    method: 'POST',
+    url: '/v1/account/keys',
+    data: { data }
   })
     .catch((err) => {
       throw err.response || err;
@@ -100,7 +110,7 @@ export async function logout (axios) {
   // Logout the user from the API
   const response = await axios({
     method: 'POST',
-    url: '/API/logout'
+    url: '/v1/logout'
   })
     .catch((err) => {
       throw err.response || err;

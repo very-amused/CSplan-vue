@@ -1,5 +1,6 @@
 import { importPrivateKey, privateDecrypt } from '~/_middleware/crypto'; // eslint-disable-line
 import { getName, NameBody } from '~/_middleware/handlers/name'; // eslint-disable-line
+import { login } from '~/_middleware/handlers/auth';
 import { AxiosStatic } from 'axios'; // eslint-disable-line
 
 /**
@@ -33,6 +34,19 @@ export const state = () => ({
 
 export const mutations = {
   /**
+   *
+   * @param state - VueX State
+   * @param {object} keyval - Single key-value pair
+   */
+  set (state, keyval) {
+    return new Promise((resolve, reject) => {
+      const key = Object.keys({ ...keyval })[0];
+      const val = keyval[key];
+      state[key] = val;
+      return resolve();
+    });
+  },
+  /**
    * Alert components that the user is logged in
    * @param {UserState} state
    */
@@ -49,49 +63,72 @@ export const mutations = {
     state.isLoggedIn = false;
   },
   /**
-   * Get whether or not the user is logged in from localStorage
-   * @param {UserState} state
-   */
-  getLoggedInState (state) {
-    state.isLoggedIn = localStorage.getItem('isLoggedIn') || false;
-  },
-  /**
-   * Get the user's keypair from localStorage
-   * @param {UserState} state
-   * @param {Keys} keys - Keypair for the user
-   */
-  getKeys (state) {
-    if (localStorage.getItem('keys')) {
-      state.keys = { ...JSON.parse(localStorage.getItem('keys')) };
-    }
-  },
-  /**
    * Set the user's display name
    * @param {UserState} state
    * @param {NameBody} nb - Name Body
    */
   setName (state, nb) {
     state.displayName = nb.username || `${nb.firstName || ''}${nb.lastName ? ' ' + nb.lastName : ''}`;
+  }
+};
+
+export const actions = {
+  /**
+   * Initialize the store on page load
+   * @param {*} param0
+   * @param {AxiosStatic} axios
+   */
+  async init ({ dispatch, state }, axios) {
+    // Check whether or not the user is logged in or not
+    await dispatch('getLoggedInState');
+
+    // If the user is logged in, fetch relevant info about them from the API
+    if (state.isLoggedIn) {
+      await dispatch('getKeys'); // Fetch keypair from localStorage
+      await dispatch('getName', axios);
+    }
+  },
+
+  /**
+   * Log in the user
+   * @param {AxiosStatic} axios
+   */
+  async login ({ commit }, { axios, body }) {
+    const token = await login(axios, { ...body });
+    localStorage.setItem('isLoggedIn', true);
+    await commit('set', { isLoggedIn: true });
+    return token;
+  },
+
+  async getLoggedInState ({ commit }) {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || false;
+    await commit('set', { isLoggedIn });
+  },
+  async getKeys ({ commit }) {
+    if (localStorage.getItem('keys')) {
+      await commit('set', { keys: JSON.parse(localStorage.getItem('keys')) });
+    }
   },
   /**
-   * Get the user's display name
-   * @param {UserState} state
-   * @param {AxiosStatic} axios - Nuxt Axios instance
+   * Retrieve and decrypt the user's name
+   * @param {AxiosStatic} axios
    */
-  async getName (state, axios) {
+  async getName ({ commit, state }, axios) {
     let d;
     let displayName;
     if (state.isLoggedIn) {
       // Used cached displayname if available
       if (sessionStorage.getItem('displayName')) {
-        state.displayName = sessionStorage.getItem('displayName');
+        commit('set', { displayName: sessionStorage.getItem('displayName') });
         return;
       }
-      d = await getName(axios);
+      else {
+        d = await getName(axios);
+      }
     }
     else {
       // Don't make any API calls if the user isn't logged in
-      state.displayName = '';
+      commit('set', { displayName: '' });
       return;
     }
 
@@ -124,18 +161,6 @@ export const mutations = {
     }
     // Cache the username in session storage
     sessionStorage.setItem('displayName', displayName);
-    state.displayName = displayName;
-  }
-};
-
-export const actions = {
-  init ({ commit, state }) {
-    // Check whether or not the user is logged in or not
-    commit('getLoggedInState');
-
-    // If the user is logged in, fetch relevant info about them from the API
-    if (state.isLoggedIn) {
-      commit('getKeys'); // Fetch keypair from localStorage
-    }
+    commit('set', { displayName });
   }
 };

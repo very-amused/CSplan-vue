@@ -15,12 +15,9 @@ import store from 'vuex'; // eslint-disable-line
  */
 export async function setName (axios, body) {
   const response = await axios({
-    method: 'PUT',
-    url: '/API/me/name',
-    data: body,
-    headers: {
-      'X-Encrypt': false
-    }
+    method: 'PATCH',
+    url: '/v1/account/name',
+    data: body
   })
     .catch((err) => {
       throw err.response || err;
@@ -37,10 +34,7 @@ export async function setName (axios, body) {
 export async function getName (axios) {
   const response = await axios({
     method: 'GET',
-    url: '/API/me/name',
-    headers: {
-      'X-Decrypt': false
-    }
+    url: '/v1/account/name'
   })
     .catch((err) => {
       throw err.response || err;

@@ -237,6 +237,9 @@ export function importPublicKey (encodedPublicKey) {
  */
 export function importPrivateKey (encodedPrivateKey) {
   const privateKey = ABdecode(encodedPrivateKey);
+  if (!privateKey.byteLength) {
+    throw new Error('Empty private key provided');
+  }
 
   return crypto.subtle.importKey(
     'pkcs8',

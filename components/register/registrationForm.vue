@@ -105,9 +105,12 @@ export default {
       await this.$emit('success', 'registration');
 
       // Log the user in
-      const token = await _auth.login(this.$axios, this.$store, {
-        email: this.fields.email,
-        password: this.fields.password
+      const token = await this.$store.dispatch('user/login', {
+        axios: this.$axios,
+        body: {
+          email: this.fields.email,
+          password: this.fields.password
+        }
       })
         .catch((err) => {
           this.error = err.data.message || 'An unknown error occured, refresh the page and try again.';
@@ -155,7 +158,7 @@ export default {
         publicKey: keyInfo.keys.publicKey,
         privateKey: keyInfo.keys.privateKey
       }));
-      this.$store.commit('user/getKeys');
+      await this.$store.dispatch('user/getKeys');
 
       // Submit the pubkey, encrypted private key, and PBKDF2 salt to the server for storage
       await _auth.storeKeypair(this.$axios, { ...keyInfo.keys }, keyInfo.PBKDF2salt)

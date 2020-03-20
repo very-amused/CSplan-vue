@@ -1,28 +1,30 @@
 <template lang="pug">
   div(class="card")
-    div(class="card-content")
+    div(class="card-content" id="content")
       form
         b-field(label="Title")
           b-input(maxlength=2000 :has-counter="false")
         span(class="label") Items
-          b-button(rounded size="is-small" style="margin-left: 0.5rem;" @click="showItemForm = !showItemForm")
-            b-icon(:icon="showItemForm ? 'chevron-up' : 'plus'")
-        b-field
-          template(v-if="showItemForm")
-            form(action="" onsubmit="return false;" name="itemForm")
-              b-field(horizontal custom-class="hide")
-                b-input(v-model="itemFields.title" id="itemFieldTitle" placeholder="Title" expanded)
-                b-input(v-model="itemFields.color" type="color")
-              b-field(horizontal custom-class="hide")
-                b-input(v-model="itemFields.description" placeholder="Description (optional)")
-                b-button(@click="addItem" native-type="submit")
-                  b-icon(icon="plus")
-        b-taglist
-          b-taglist(v-for="item in items" attached)
-            b-tag {{ item.title }}
-            b-tag(:style="`background-color: ${item.color}`")
-        b-button(v-show="!showItemForm" type="is-success" expanded rounded)
-          b-icon(icon="plus")
+          b-dropdown(ref="dropdown" @active-change="showItemForm = $event")
+            b-button(rounded size="is-small" style="margin-left: 0.5rem;" slot="trigger")
+              b-icon(:icon="showItemForm ? 'chevron-up' : 'plus'")
+            b-dropdown-item(custom id="itemForm")
+              form(action="" onsubmit="return false;")
+                b-field(horizontal custom-class="hide")
+                  b-input(v-model="itemFields.title" id="itemFieldTitle" placeholder="Title" expanded)
+                  b-input(v-model="itemFields.color" type="color")
+                b-field
+                  b-input(v-model="itemFields.description" type="textarea" placeholder="Description (optional)")
+                b-field
+                  b-button(@click="addItem" native-type="submit")
+                    b-icon(icon="plus")
+          b-taglist
+            b-taglist(v-for="(item, index) in items" :key="index" attached)
+              b-tag {{ item.title }}
+              b-tag(:style="`background-color: ${item.color}`")
+        div(id="submitButtonContainer")
+          b-button(type="is-success" rounded id="submitButton")
+            b-icon(icon="plus")
 </template>
 
 <script>
@@ -56,10 +58,35 @@ export default {
       this.items.push({ ...this.itemFields });
       // Clear each field except for the color picker
       this.itemFields.title = this.itemFields.description = '';
+      // Close the dropdown
+      this.$refs.dropdown.toggle();
     }
   }
 };
 </script>
+
+<style scoped>
+/* Custom sizing and spacing for forms */
+.card {
+  min-height: 30rem;
+}
+#itemForm {
+  min-width: 30rem;
+}
+#submitButtonContainer {
+  position: absolute;
+  bottom: 1rem;
+  right: 0;
+
+  display: flex;
+  justify-content: center;
+
+  width: 100%;
+}
+#submitButton {
+  width: 95%;
+}
+</style>
 
 <style lang="scss">
 $color-selector-margin: 1.5rem;

@@ -1,6 +1,6 @@
 <template lang="pug">
     div(class="card")
-      div(class="card-content" draggable="true")
+      div(class="card-content")
         article(class="media-content")
           header(class="title is-3") {{ list.title }}
           hr
@@ -40,7 +40,7 @@ export default {
     id: {
       type: String,
       default () {
-        return 0;
+        return '0';
       }
     }
   },

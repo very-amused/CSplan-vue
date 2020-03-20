@@ -30,13 +30,29 @@ export const mutations = {
 };
 
 export const actions = {
-  addItem ({ commit }, { id, item }) {
+  getLists ({ commit }) {
+    if (localStorage.getItem('todos')) {
+      const lists = JSON.parse(localStorage.getItem('todos'));
+      lists.forEach(list => commit('addList', list));
+    }
+  },
+  addList ({ commit, dispatch }, list) {
+    commit('addList', list);
+    dispatch('updateCache');
+  },
+  addItem ({ commit, dispatch }, { id, item }) {
     commit('addItem', { id, item });
+    dispatch('updateCache');
   },
-  toggleCompletion ({ commit }, { id, itemIndex }) {
+  toggleCompletion ({ commit, dispatch }, { id, itemIndex }) {
     commit('toggleItemCompletion', { id, itemIndex });
+    dispatch('updateCache');
   },
-  removeItem ({ commit }, { id, itemIndex }) {
+  removeItem ({ commit, dispatch }, { id, itemIndex }) {
     commit('removeItem', { id, itemIndex });
+    dispatch('updateCache');
+  },
+  updateCache ({ state }) {
+    localStorage.setItem('todos', JSON.stringify(state));
   }
 };

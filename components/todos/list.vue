@@ -12,9 +12,8 @@
               template(v-else)
                 b-button(@click="toggleCompletion(index)" rounded type="is-grey" outlined)
             article(class="media-content")
-              span(class="has-text-weight-bold" type="is-primary") {{ item.title }}
-              br
-              span {{ item.description }}
+              p(class="has-text-weight-bold" type="is-primary") {{ item.title }}
+              p {{ item.description }}
             figure(class="media-right")
               b-button(@click="removeItem(index)" type="is-text")
                 b-icon(icon="close" size="is-small")
@@ -104,7 +103,6 @@ $field-margin: 0.75rem;
 .card {
   display: flex;
   flex-direction: column;
-  min-width: 35%;
   margin-left: $card-margin;
   margin-right: $card-margin;
   margin-top: $card-margin;
@@ -115,5 +113,8 @@ $field-margin: 0.75rem;
 }
 .button.form-close {
   margin-bottom: $field-margin;
+}
+p {
+  word-break: break-all;
 }
 </style>

@@ -18,10 +18,10 @@
                 b-field
                   b-button(@click="addItem" native-type="submit")
                     b-icon(icon="plus")
-          b-taglist
-            b-taglist(v-for="(item, index) in items" :key="index" attached)
-              b-tag {{ item.title }}
-              b-tag(:style="`background-color: ${item.color}`")
+        b-taglist
+          b-taglist(v-for="(item, index) in items" :key="index" attached)
+            b-tag(size="is-medium" :title="item.title") {{ item.title }}
+            b-tag(size="is-medium" :style="`background-color: ${item.color}`")
         div(id="submitButtonContainer")
           b-button(type="is-success" rounded id="submitButton")
             b-icon(icon="plus")
@@ -113,5 +113,12 @@ input[type="color"] {
 }
 .tags:not(:last-child) {
   margin-right: 0.5rem;
+}
+
+/* Handle tag title overflow */
+.tag span {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

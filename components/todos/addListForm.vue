@@ -3,7 +3,7 @@
     div(class="card-content" id="content")
       form
         b-field(label="Title")
-          b-input(maxlength=2000 :has-counter="false")
+          b-input(v-model="fields.title" maxlength=2000 :has-counter="false")
         span(class="label") Items
           b-dropdown(ref="dropdown" @active-change="showItemForm = $event")
             b-button(rounded size="is-small" style="margin-left: 0.5rem;" slot="trigger")
@@ -23,7 +23,7 @@
             b-tag(size="is-medium" :title="item.title") {{ item.title }}
             b-tag(size="is-medium" :style="`background-color: ${item.color}`")
         div(id="submitButtonContainer")
-          b-button(type="is-success" rounded id="submitButton")
+          b-button(@click="addList" type="is-success" rounded id="submitButton")
             b-icon(icon="plus")
 </template>
 
@@ -60,6 +60,15 @@ export default {
       this.itemFields.title = this.itemFields.description = '';
       // Close the dropdown
       this.$refs.dropdown.toggle();
+    },
+    async addList () {
+      await this.$store.dispatch('todos/addList', {
+        axios: this.$axios,
+        list: {
+          title: this.fields.title,
+          items: this.items
+        }
+      });
     }
   }
 };

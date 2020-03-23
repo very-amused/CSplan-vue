@@ -302,3 +302,96 @@ export async function privateDecrypt (base64, privateKey) {
 
   return plaintext;
 };
+
+export async function genSymmetricKey (publicKey) {
+  const symmetricKey = await crypto.subtle.generateKey(
+    {
+      name: 'AES-GCM',
+      length: 128
+    },
+    1, // Key is extractable
+    ['encrypt', 'decrypt']
+  );
+
+  const exportedSymmetricKey = ABencode(await crypto.subtle.exportKey(
+    'raw',
+    symmetricKey
+  ));
+
+  const encryptedSymmetricKey = ABencode(await crypto.subtle.wrapKey(
+    'raw',
+    symmetricKey,
+    publicKey,
+    {
+      name: 'RSA-OAEP'
+    }
+  ));
+
+  return {
+    usable: {
+      symmetricKey
+    },
+    exported: {
+      symmetricKey: exportedSymmetricKey,
+      encryptedSymmetricKey
+    }
+  };
+};
+
+/**
+ * Encrypt a piece of text using AES
+ * @param {string} text - Plaintext to be encrypted
+ * @param {CryptoKey} symmetricKey - 128 bit AES-GCM key
+ */
+export async function encrypt (plaintext, symmetricKey) {
+  // Generate a 16-byte iv
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+
+  // Encrypt the plaintext
+  const enc = new TextEncoder('utf-8');
+  const plainbuf = enc.encode(plaintext);
+  const cipherbuf = await crypto.subtle.encrypt(
+    {
+      name: 'AES-GCM',
+      iv,
+      tagLength: 128
+    },
+    symmetricKey,
+    plainbuf
+  );
+
+  // Create the ciphertext as IV(12) | C(?) | T(16)
+  return ABencode(ABconcat(iv, cipherbuf));
+}
+
+/**
+ * Recursively encrypt an object or array while preserving its original structure
+ * @param {object | array | string} data - Data to encrypt
+ * @param {CryptoKey} symmetricKey - 128-bit AES-GCM key
+ * @returns {Promise<object | array | string>}
+ */
+export async function deepEncrypt (data, symmetricKey) {
+  // Encrypt arrays while preserving their structrure
+  if (Array.isArray(data)) {
+    const cipherout = [];
+    for (let i = 0; i < data.length; i++) {
+      cipherout.push(await deepEncrypt(data[i], symmetricKey));
+    }
+    return cipherout;
+  }
+  // Encrypt objects while preserving their structure
+  else if (typeof data === 'object') {
+    const cipherout = {};
+    for (const i in data) {
+      cipherout[i] = await deepEncrypt(data[i], symmetricKey);
+    }
+    return cipherout;
+  }
+  // Encrypt strings using the symmetric key provided
+  else if (typeof data.toString === 'function') {
+    return encrypt(data, symmetricKey);
+  }
+  else {
+    throw new TypeError('Data provided is not of type object, array, or string.');
+  }
+};

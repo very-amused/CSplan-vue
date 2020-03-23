@@ -1,3 +1,6 @@
+import { importPublicKey, genSymmetricKey, deepEncrypt } from '~/_middleware/crypto';
+import { addList } from '~/_middleware/handlers/todos';
+
 export const state = () => ([
   {
     id: '1234',
@@ -36,9 +39,18 @@ export const actions = {
       lists.forEach(list => commit('addList', list));
     }
   },
-  addList ({ commit, dispatch }, list) {
+  async addList ({ commit, dispatch, rootState }, { axios, list }) {
+    const publicKey = await importPublicKey(rootState.user.keys.publicKey);
+    const { usable, exported } = await genSymmetricKey(publicKey);
+    const encrypted = await deepEncrypt(list, usable.symmetricKey);
+    const id = await addList(axios, {
+      ...encrypted,
+      cryptoKey: exported.encryptedSymmetricKey
+    });
+    // Update the list with its generated id and symmetric key
+    list = { ...list, id, cryptoKey: exported.symmetricKey };
+    dispatch('updateCache', list);
     commit('addList', list);
-    dispatch('updateCache');
   },
   addItem ({ commit, dispatch }, { id, item }) {
     commit('addItem', { id, item });

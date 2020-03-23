@@ -4,18 +4,15 @@
       b-tab-item(v-for="(list, index) in lists" :key="list.id" :label="`${index + 1}. ${list.title || 'Untitled'}`")
         list(:id="list.id")
       b-tab-item(id="new-list-tab" icon="plus" label="New List")
-      key-listener(@keyup="changeTab")
-      b-modal(:active="tabIndex === lists.length" @close="tabIndex -= 1")
-        addListForm()
+      b-modal(:active="tabIndex === addButtonIndex" @close="tabIndex = addButtonIndex - 1")
+        addListForm
 </template>
 
 <script>
 import list from './list';
 import addListForm from './addListForm';
-import keyListener from '~/components/keyListener';
 export default {
   components: {
-    keyListener,
     addListForm,
     list
   },
@@ -30,18 +27,39 @@ export default {
   computed: {
     lists () {
       return this.$store.state.todos;
+    },
+    addButtonIndex () {
+      return this.$store.state.todos.length;
     }
+  },
+
+  mounted () {
+    window.addEventListener('keyup', this.changeTab);
   },
 
   methods: {
     changeTab (evt) {
+      // Return if the modal is shown
+      if (this.tabIndex === this.addButtonIndex) {
+        return;
+      }
+
       const { key } = evt;
       const strange = [ ...Array(10).keys() ].map(key => key.toString());
       const range = [ ...Array(10).keys() ];
 
       if (strange.includes(key) && range.includes(parseInt(key))) {
         const index = parseInt(key);
-        this.tabIndex = index === 0 ? 10 : index - 1;
+        if (index >= this.addButtonIndex) {
+          this.tabIndex = this.addButtonIndex - 1;
+        }
+        else {
+          this.tabIndex = index === 0 ? 10 : index - 1;
+        }
+      }
+      // N-key is a shortcut to add an item
+      else if (key === 'n') {
+        this.tabIndex = this.addButtonIndex;
       }
     }
   }
@@ -52,7 +70,7 @@ export default {
 .b-tabs {
   margin-top: 1rem;
 }
-#addListIcon {
+#new-list-tab {
   margin-top: 1rem;
 }
 </style>

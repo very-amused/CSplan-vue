@@ -344,7 +344,7 @@ export async function genSymmetricKey (publicKey) {
  * @param {CryptoKey} symmetricKey - 128 bit AES-GCM key
  */
 export async function encrypt (plaintext, symmetricKey) {
-  // Generate a 16-byte iv
+  // Generate a 12-byte iv
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
   // Encrypt the plaintext
@@ -362,6 +362,34 @@ export async function encrypt (plaintext, symmetricKey) {
 
   // Create the ciphertext as IV(12) | C(?) | T(16)
   return ABencode(ABconcat(iv, cipherbuf));
+}
+
+/**
+ * Decrypt a piece of base64 encoded ciphertext using AES
+ * @param {string} ciphertext
+ * @param {CryptoKey} symmetricKey - 128-bit AES-GCM key
+ */
+export async function decrypt (ciphertext, symmetricKey) {
+  // Decode the ciphertext
+  const cipherbuf = ABdecode(ciphertext);
+  // Separate the iv from the real ciphertext/buffer
+  const iv = cipherbuf.slice(0, 12);
+  const realCipherbuf = cipherbuf.slice(12);
+
+  // Decrypt the ciphertext
+  const plainbuf = await crypto.subtle.decrypt(
+    {
+      name: 'AES-GCM',
+      iv,
+      tagLength: 128
+    },
+    symmetricKey,
+    realCipherbuf
+  );
+
+  // Decode using UTF-8 and return the plaintext
+  const dec = new TextDecoder('utf-8');
+  return dec.decode(plainbuf);
 }
 
 /**
@@ -389,7 +417,39 @@ export async function deepEncrypt (data, symmetricKey) {
   }
   // Encrypt strings using the symmetric key provided
   else if (typeof data.toString === 'function') {
-    return encrypt(data, symmetricKey);
+    return encrypt(data.toString(), symmetricKey);
+  }
+  else {
+    throw new TypeError('Data provided is not of type object, array, or string.');
+  }
+};
+
+/**
+ * Recursively decrypt an object or array while preserving its original structure
+ * @param {object | array | string} data - Data to decrypt
+ * @param {CryptoKey} symmetricKey - 128-bit AES-GCM key
+ * @returns {Promise<object | array | string>}
+ */
+export async function deepDecrypt (data, symmetricKey) {
+  // Encrypt arrays while preserving their structrure
+  if (Array.isArray(data)) {
+    const cipherout = [];
+    for (let i = 0; i < data.length; i++) {
+      cipherout.push(await deepDecrypt(data[i], symmetricKey));
+    }
+    return cipherout;
+  }
+  // Encrypt objects while preserving their structure
+  else if (typeof data === 'object') {
+    const cipherout = {};
+    for (const i in data) {
+      cipherout[i] = await deepDecrypt(data[i], symmetricKey);
+    }
+    return cipherout;
+  }
+  // Encrypt strings using the symmetric key provided
+  else if (typeof data.toString === 'function') {
+    return decrypt(data.toString(), symmetricKey);
   }
   else {
     throw new TypeError('Data provided is not of type object, array, or string.');

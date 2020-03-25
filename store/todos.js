@@ -1,5 +1,5 @@
-import { importPublicKey, genSymmetricKey, deepEncrypt } from '~/_middleware/crypto';
-import { addList } from '~/_middleware/handlers/todos';
+import { importPublicKey, genSymmetricKey, importSymmetricKey, deepEncrypt } from '~/_middleware/crypto';
+import { addList, addItems } from '~/_middleware/handlers/todos';
 
 export const state = () => ([
   {
@@ -24,7 +24,7 @@ export const mutations = {
   toggleItemCompletion (state, { id, itemIndex }) {
     const index = state.findIndex(list => list.id === id);
     const item = state[index].items[itemIndex];
-    item.completed = !item.completed;
+    state[index].items.splice(itemIndex, 1, { ...item, completed: !item.completed });
   },
   removeItem (state, { id, itemIndex }) {
     const index = state.findIndex(list => list.id === id);
@@ -52,9 +52,18 @@ export const actions = {
     dispatch('updateCache', list);
     commit('addList', list);
   },
-  addItem ({ commit, dispatch }, { id, item }) {
-    commit('addItem', { id, item });
+  async addItem ({ state, commit, dispatch, rootState }, { axios, id, item }) {
+    // Get the list's symmetric key
+    const index = state.findIndex(list => list.id === id);
+    const symmetricKey = await importSymmetricKey(state[index].cryptoKey);
+
+    // Post the encrypted item to the API
+    const encrypted = await deepEncrypt([ item ], symmetricKey);
+    await addItems(axios, id, encrypted);
+
+    // Update the local state
     dispatch('updateCache');
+    commit('addItem', { id, item });
   },
   toggleCompletion ({ commit, dispatch }, { id, itemIndex }) {
     commit('toggleItemCompletion', { id, itemIndex });

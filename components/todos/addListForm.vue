@@ -55,7 +55,7 @@ export default {
         document.querySelector('#itemFieldTitle').setCustomValidity('');
       }
 
-      this.items.push({ ...this.itemFields });
+      this.items.push({ ...this.itemFields, completed: false });
       // Clear each field except for the color picker
       this.itemFields.title = this.itemFields.description = '';
       // Close the dropdown

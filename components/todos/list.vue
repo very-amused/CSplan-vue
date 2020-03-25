@@ -18,7 +18,7 @@
               b-button(@click="removeItem(index)" type="is-text")
                 b-icon(icon="close" size="is-small")
         hr(v-if="list.items.length > 0")
-        form(action="")
+        form(action="" onsubmit="return false;")
           template(v-if="!showForm")
             b-button(@click="showForm = true" type="is-grey" outlined expanded)
               b-icon(icon="plus")
@@ -68,10 +68,22 @@ export default {
         return;
       }
 
-      await this.$store.dispatch('todos/addItem', {
-        id: this.id,
-        item: { ...this.formInputs, completed: false }
-      });
+      try {
+        await this.$store.dispatch('todos/addItem', {
+          axios: this.$axios,
+          id: this.id,
+          item: { ...this.formInputs, color: '#FFFFFF', completed: false }
+        });
+      }
+      catch (err) {
+        const message = `An error has occured while trying to add this item to the todo list. ${err.response ? `Error HTTP status: ${err.response.status}` : 'Unknown error status'}`;
+        this.$buefy.dialog.alert({
+          title: 'Error Adding Item',
+          message,
+          type: 'is-danger'
+        });
+      }
+
       // Clear the form inputs and hide the form after adding the item
       this.formInputs = {
         title: '',

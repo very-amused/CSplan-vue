@@ -339,6 +339,28 @@ export async function genSymmetricKey (publicKey) {
 };
 
 /**
+ * Import a symmetric key from base64
+ * @param {string} encodedSymmetricKey - Base64 encoded symmetric key
+ * @returns {Promise<CryptoKey>} - 128-bit AES-GCM key
+ */
+export function importSymmetricKey (encodedSymmetricKey) {
+  const key = ABdecode(encodedSymmetricKey);
+  if (!key.byteLength) {
+    throw new Error('Empty key provided');
+  }
+
+  return crypto.subtle.importKey(
+    'raw',
+    key,
+    {
+      name: 'AES-GCM'
+    },
+    0, // Not extractable
+    ['encrypt', 'decrypt']
+  );
+}
+
+/**
  * Encrypt a piece of text using AES
  * @param {string} text - Plaintext to be encrypted
  * @param {CryptoKey} symmetricKey - 128 bit AES-GCM key

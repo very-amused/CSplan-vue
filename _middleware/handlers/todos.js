@@ -40,3 +40,26 @@ export async function addList (axios, body) {
 
   return response.data.data.id;
 }
+
+/**
+ * Add item(s) to an existing todo list
+ * @param {AxiosStatic} axios
+ * @param {string} id - The id of the parent todo list
+ * @param {TodoItem[]} items
+ */
+export async function addItems (axios, id, items) {
+  const data = {
+    type: 'todo-items',
+    attributes: {
+      items
+    }
+  };
+
+  const response = await axios({
+    method: 'POST',
+    url: `/v1/todos/${id}/items`,
+    data: { data }
+  });
+
+  return response.data.data.id;
+}

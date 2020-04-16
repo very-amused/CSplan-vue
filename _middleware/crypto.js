@@ -249,7 +249,7 @@ export function importPrivateKey (encodedPrivateKey) {
       hash: 'SHA-512'
     },
     0, // Not exportable
-    ['decrypt']
+    ['decrypt', 'unwrapKey']
   );
 }
 
@@ -361,6 +361,32 @@ export function importSymmetricKey (encodedSymmetricKey) {
 }
 
 /**
+ * Decrypt an AES-GCM symmetric key using a RSA-OAEP private key
+ * @param {string} encryptedSymmetricKey - Base64 ciphertext of an AES-GCM key
+ * @param {CryptoKey} privateKey - RSA private key used to decrypt the AES-GCM key
+ */
+export function unwrapSymmetricKey (encryptedSymmetricKey, privateKey) {
+  const key = ABdecode(encryptedSymmetricKey);
+  if (!key.byteLength) {
+    throw new Error('Empty key provided');
+  }
+
+  return crypto.subtle.unwrapKey(
+    'raw',
+    key,
+    privateKey,
+    {
+      name: 'RSA-OAEP'
+    },
+    {
+      name: 'AES-GCM'
+    },
+    0,
+    ['encrypt', 'decrypt']
+  );
+}
+
+/**
  * Encrypt a piece of text using AES
  * @param {string} text - Plaintext to be encrypted
  * @param {CryptoKey} symmetricKey - 128 bit AES-GCM key
@@ -393,7 +419,14 @@ export async function encrypt (plaintext, symmetricKey) {
  */
 export async function decrypt (ciphertext, symmetricKey) {
   // Decode the ciphertext
-  const cipherbuf = ABdecode(ciphertext);
+  let cipherbuf;
+  try {
+    cipherbuf = ABdecode(ciphertext);
+  }
+  catch {
+    return ciphertext;
+  }
+
   // Separate the iv from the real ciphertext/buffer
   const iv = cipherbuf.slice(0, 12);
   const realCipherbuf = cipherbuf.slice(12);

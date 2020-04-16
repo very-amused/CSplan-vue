@@ -33,8 +33,9 @@ export default {
     }
   },
 
-  mounted () {
+  async mounted () {
     window.addEventListener('keyup', this.changeTab);
+    await this.$store.dispatch('todos/getLists');
   },
 
   methods: {

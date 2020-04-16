@@ -18,7 +18,7 @@ import store from 'vuex'; // eslint-disable-line
  *
  * @param {AxiosStatic} axios
  * @param {ListBody} body
- * @returns {string} Unique identifier for the todo list
+ * @returns {Promise<object>} ID and checksum
  */
 export async function addList (axios, body) {
   const data = {
@@ -38,20 +38,23 @@ export async function addList (axios, body) {
     data: { data }
   });
 
-  return response.data.data.id;
+  return {
+    id: response.data.data.id,
+    checksum: response.data.data.meta.checksum
+  };
 }
 
 /**
- * Add item(s) to an existing todo list
+ * Add an item to an existing todo list
  * @param {AxiosStatic} axios
  * @param {string} id - The id of the parent todo list
  * @param {TodoItem[]} items
  */
-export async function addItems (axios, id, items) {
+export async function addItem (axios, id, item) {
   const data = {
-    type: 'todo-items',
+    type: 'todo-item',
     attributes: {
-      items
+      ...item
     }
   };
 

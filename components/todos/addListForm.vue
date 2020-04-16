@@ -63,12 +63,19 @@ export default {
     },
     async addList () {
       await this.$store.dispatch('todos/addList', {
-        axios: this.$axios,
-        list: {
-          title: this.fields.title,
-          items: this.items
-        }
-      });
+        title: this.fields.title,
+        items: this.items
+      })
+        .catch((err) => {
+          const httpErr = err.response.data.error;
+          this.$buefy.dialog.alert({
+            title: httpErr.title || 'Error!',
+            message: httpErr.detail || 'An unknown error has occured.',
+            type: 'is-danger',
+            hasIcon: true,
+            icon: 'alert-circle'
+          });
+        });
     }
   }
 };

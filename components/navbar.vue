@@ -1,5 +1,5 @@
 <template ref="navbar" lang="pug">
-  b-navbar(type="is-dark")
+  b-navbar(type="is-primary")
     template(slot="start")
       b-navbar-item(tag="nuxt-link" to="/") Dashboard
       b-navbar-item(tag="nuxt-link" to="/todos") Todos

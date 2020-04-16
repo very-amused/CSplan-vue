@@ -33,7 +33,8 @@ export default {
   */
   plugins: [
     '~/plugins/vue-cookie',
-    { src: '~/plugins/stateInit.js', mode: 'client' }
+    { src: '~/plugins/stateInit.js', mode: 'client' },
+    { src: '~/plugins/dexie.js', mode: 'client' }
   ],
   /*
   ** Nuxt.js dev-modules

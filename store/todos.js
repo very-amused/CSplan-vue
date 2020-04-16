@@ -1,5 +1,5 @@
 import { importPublicKey, genSymmetricKey, importSymmetricKey, deepEncrypt } from '~/_middleware/crypto';
-import { addList, addItems } from '~/_middleware/handlers/todos';
+import { addItem } from '~/_middleware/handlers/todos';
 
 export const state = () => ([
   {
@@ -33,33 +33,61 @@ export const mutations = {
 };
 
 export const actions = {
-  getLists ({ commit }) {
-    if (localStorage.getItem('todos')) {
-      const lists = JSON.parse(localStorage.getItem('todos'));
-      lists.forEach(list => commit('addList', list));
-    }
+  async getLists ({ commit }) {
+    const todos = await this.$dexie.todos.toArray();
+    todos.forEach((list) => {
+      commit('addList', list);
+    });
   },
-  async addList ({ commit, dispatch, rootState }, { axios, list }) {
+  async addList ({ commit, dispatch, rootState }, list) {
     const publicKey = await importPublicKey(rootState.user.keys.publicKey);
     const { usable, exported } = await genSymmetricKey(publicKey);
     const encrypted = await deepEncrypt(list, usable.symmetricKey);
-    const id = await addList(axios, {
-      ...encrypted,
-      cryptoKey: exported.encryptedSymmetricKey
+    const { data } = await this.$axios({
+      method: 'POST',
+      url: '/v1/todos',
+      data: {
+        data: {
+          type: 'todo-list',
+          attributes: {
+            title: encrypted.title
+          },
+          relationships: {
+            items: {
+              data: encrypted.items.map((item) => {
+                return {
+                  type: 'todo-item',
+                  attributes: {
+                    ...item
+                  }
+                };
+              })
+            }
+          },
+          meta: {
+            cryptoKey: exported.encryptedSymmetricKey
+          }
+        }
+      }
     });
-    // Update the list with its generated id and symmetric key
-    list = { ...list, id, cryptoKey: exported.symmetricKey };
-    dispatch('updateCache', list);
+    const id = data.data.id;
+    const index = data.data.meta.index;
+    const checksum = data.data.meta.checksum;
+    // Update the list with its generated info, and symmetric key
+    list = { ...list, id, index, checksum, cryptoKey: usable.symmetricKey };
+    // Add to Dexie
+    await this.$dexie.todos.add(list);
+    // Add to state
     commit('addList', list);
   },
-  async addItem ({ state, commit, dispatch, rootState }, { axios, id, item }) {
+  async addItem ({ state, commit, dispatch, rootState }, { id, item }) {
     // Get the list's symmetric key
     const index = state.findIndex(list => list.id === id);
     const symmetricKey = await importSymmetricKey(state[index].cryptoKey);
 
     // Post the encrypted item to the API
     const encrypted = await deepEncrypt([ item ], symmetricKey);
-    await addItems(axios, id, encrypted);
+    await addItem(this.$axios, id, encrypted);
 
     // Update the local state
     dispatch('updateCache');
@@ -72,8 +100,5 @@ export const actions = {
   removeItem ({ commit, dispatch }, { id, itemIndex }) {
     commit('removeItem', { id, itemIndex });
     dispatch('updateCache');
-  },
-  updateCache ({ state }) {
-    localStorage.setItem('todos', JSON.stringify(state));
   }
 };

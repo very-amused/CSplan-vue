@@ -18,12 +18,12 @@
               b-button(@click="removeItem(index)" type="is-text")
                 b-icon(icon="close" size="is-small")
         hr(v-if="list.items.length > 0")
-        form(action="" onsubmit="return false;")
+        form(action="" onsubmit="return false")
           template(v-if="!showForm")
-            b-button(@click="showForm = true" type="is-grey" outlined expanded)
+            b-button(@click="openForm" type="is-grey" outlined expanded)
               b-icon(icon="plus")
           template(v-else)
-            b-button(class="form-close" @click="showForm = false" type="is-text")
+            b-button(class="form-close" @click="closeForm" type="is-text")
               b-icon(icon="close")
             b-field
               b-input(v-model="formInputs.title" placeholder="Title" required)
@@ -62,6 +62,14 @@ export default {
   },
 
   methods: {
+    openForm () {
+      this.$emit('form-open');
+      this.showForm = true;
+    },
+    closeForm () {
+      this.$emit('form-close');
+      this.showForm = false;
+    },
     async addItem () {
       // Enforce required title field
       if (!this.formInputs.title.length) {
@@ -108,16 +116,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$card-margin: 1rem;
 $button-width: 34px;
 $field-margin: 0.75rem;
 
 .card {
   display: flex;
   flex-direction: column;
-  margin-left: $card-margin;
-  margin-right: $card-margin;
-  margin-top: $card-margin;
+  margin-left: 0.5rem;
 }
 /* Override button width change when icon is added */
 .button.is-rounded {

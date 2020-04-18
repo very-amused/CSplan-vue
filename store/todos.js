@@ -32,7 +32,7 @@ export const mutations = {
 };
 
 export const actions = {
-  async getLists ({ commit, rootState }) {
+  async getLists ({ commit, state, rootState }) {
     const response = await this.$axios({
       method: 'GET',
       url: '/v1/todos/ids'
@@ -86,7 +86,9 @@ export const actions = {
 
     const updatedTodos = await this.$dexie.todos.toArray();
     for (const list of updatedTodos) {
-      commit('addList', list);
+      if (!state.find(l => l.id === list.id)) {
+        commit('addList', list);
+      }
     }
   },
   async addList ({ commit, dispatch, rootState }, list) {

@@ -76,6 +76,7 @@ export default {
             icon: 'alert-circle'
           });
         });
+      this.$parent.close();
     }
   }
 };

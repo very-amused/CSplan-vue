@@ -1,6 +1,4 @@
-import { importPublicKey, publicEncrypt, importPrivateKey, privateDecrypt } from '~/_middleware/crypto'; // eslint-disable-line
-import { setName, getName, NameBody } from '~/_middleware/handlers/name'; // eslint-disable-line
-import { login, logout } from '~/_middleware/handlers/auth';
+import { importPublicKey, publicEncrypt, importPrivateKey, privateDecrypt, generateMasterKeypair } from '~/assets/crypto'; // eslint-disable-line
 import { AxiosStatic } from 'axios'; // eslint-disable-line
 
 /**
@@ -9,28 +7,43 @@ import { AxiosStatic } from 'axios'; // eslint-disable-line
  * @property {string} privateKey - Base64 encoded RSA private key
  */
 
-/**
- * Typedef for user state
- * @typedef {Object} UserState
- * @property {boolean} isLoggedIn - Bool indicating whether the user is logged in
- * (persisted in localStorage)
- * @property {Keys} keys - The user's private and public RSA keys
- * (for usage in clientside crypto operations)
- * @property {string} displayName - The user's display name
- * (username or first + last given name)
- */
-
-/**
- * @exports UserState
- */
-export const state = () => ({
+const initialState = () => ({
   isLoggedIn: false,
+  id: '',
   keys: {
     publicKey: null,
     privateKey: null
   },
-  displayName: ''
+  name: {
+    firstName: '',
+    lastName: '',
+    username: ''
+  }
 });
+
+export const state = () => ({
+  isLoggedIn: false,
+  id: '',
+  keys: {
+    publicKey: null,
+    privateKey: null
+  },
+  name: {
+    firstName: '',
+    lastName: '',
+    username: ''
+  }
+});
+
+export const getters = {
+  displayName (state) {
+    if (!state.isLoggedIn) {
+      return '';
+    }
+
+    return state.name.username || `${state.name.firstName || ''} ${state.name.lastName || ''}`.trim();
+  }
+};
 
 export const mutations = {
   /**
@@ -38,53 +51,128 @@ export const mutations = {
    * @param state - VueX State
    * @param {object} keyval - Single key-value pair
    */
-  set (state, keyval) {
-    return new Promise((resolve, reject) => {
-      const key = Object.keys({ ...keyval })[0];
-      const val = keyval[key];
-      state[key] = val;
-      return resolve();
-    });
+  setLoggedIn (state, value) {
+    state.isLoggedIn = value;
+  },
+  setID (state, id) {
+    state.id = id;
+  },
+  setKeys (state, keys) {
+    state.keys = { ...keys };
+  },
+  setName (state, name) {
+    state.name = { ...name };
   }
 };
 
 export const actions = {
-  /**
-   * Initialize the store on page load
-   * @param {*} param0
-   * @param {AxiosStatic} axios
-   */
-  async init ({ dispatch, state }, axios) {
-    // Check whether or not the user is logged in or not
-    await dispatch('getLoggedInState');
-
-    // If the user is logged in, fetch relevant info about them from the API
-    if (state.isLoggedIn) {
-      await dispatch('getKeys'); // Fetch keypair from localStorage
-      await dispatch('getName', axios);
+  async init ({ commit, dispatch }) {
+    const user = await this.$dexie.user.toCollection().first();
+    if (user) {
+      commit('setLoggedIn', true);
+      commit('setID', user.id);
+      await dispatch('updateLoggedInState'); // Verify the user's authentication token
+      commit('setKeys', user.keys);
+      await dispatch('updateName');
     }
+  },
+
+  async register ({ commit, dispatch }, body) {
+    const response = await this.$axios({
+      method: 'POST',
+      url: '/v1/register',
+      data: {
+        data: {
+          type: 'user',
+          attributes: {
+            ...body
+          }
+        }
+      }
+    });
+    const id = response.data.data.id;
+    await this.$dexie.user.put({ id });
+    await commit('setID', id);
   },
 
   /**
    * Log in the user
    * @param {AxiosStatic} axios
    */
-  async login ({ commit }, { axios, body }) {
-    const token = await login(axios, { ...body });
-    localStorage.setItem('isLoggedIn', true);
-    await commit('set', { isLoggedIn: true });
-    return token;
+  async login ({ commit, state }, body) {
+    const response = await this.$axios({
+      method: 'POST',
+      url: '/v1/login',
+      data: {
+        data: {
+          type: 'user',
+          attributes: {
+            ...body
+          }
+        }
+      }
+    });
+    const token = response.data.data.id;
+
+    await commit('setLoggedIn', true);
+    // Store the token in the cookies (expires after a week)
+    if (this.$cookie.get('Authorization')) {
+      this.$cookie.delete('Authorization');
+    }
+    this.$cookie.set('Authorization', token, { expires: 7 });
   },
 
   /**
    * Log out the user
    */
-  async logout ({ commit }, axios) {
-    await logout(axios);
-    // Clear ALL cache
-    localStorage.clear();
-    sessionStorage.clear();
-    await commit('set', { isLoggedIn: false });
+  async logout ({ dispatch }) {
+    await this.$axios({
+      method: 'POST',
+      url: '/v1/account/logout'
+    });
+
+    dispatch('reset');
+    // Reset each namespaced module
+    const modules = [
+      'todos'
+    ];
+    for (const module of modules) {
+      await dispatch(`${module}/reset`, null, { root: true });
+    }
+  },
+
+  async genKeypair ({ commit, state }, body) {
+    const keyInfo = await generateMasterKeypair(body.password);
+    // Store the generated keypair in the API
+    await this.$axios({
+      method: 'POST',
+      url: '/v1/account/keys',
+      data: {
+        data: {
+          type: 'key-data',
+          attributes: {
+            publicKey: keyInfo.keys.exported.publicKey,
+            privateKey: keyInfo.keys.exported.encryptedPrivateKey,
+            PBKDF2salt: keyInfo.PBKDF2salt
+          }
+        }
+      }
+    });
+
+    // Update the localstate with usable CryptoKey objects
+    await this.$dexie.user.update(state.id, {
+      keys: {
+        ...keyInfo.keys.usable
+      }
+    });
+    await commit('setKeys', {
+      ...keyInfo.keys.usable
+    });
+  },
+
+  async reset ({ replaceState }) {
+    await this.$dexie.user.clear();
+    this.replaceState(initialState);
   },
 
   /**
@@ -92,100 +180,77 @@ export const actions = {
    */
   async getLoggedInState ({ commit }) {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true' || false;
-    await commit('set', { isLoggedIn });
-  },
-
-  /**
-   * Get the user's keypair
-   */
-  async getKeys ({ commit, dispatch }) {
-    if (localStorage.getItem('keys')) {
-      await commit('set', { keys: JSON.parse(localStorage.getItem('keys')) });
-    }
-    // Log the user out if their keypair has been lost (this renders their session useless)
-    else {
-      await dispatch('logout');
-    }
+    await commit('setLoggedIn', isLoggedIn);
   },
 
   /**
    * Encrypt and set the user's name
    */
-  async setName ({ commit, state }, { axios, unencryptedBody }) {
-    const { username, firstName, lastName } = unencryptedBody;
-    const publicKey = await importPublicKey(state.keys.publicKey);
-
+  async setName ({ commit, state }, body) {
     // Encrypt each field that isn't empty
-    const encrypted = {
-      username: '',
-      firstName: '',
-      lastName: ''
-    };
-    for (const field in unencryptedBody) {
+    const encrypted = {};
+    for (const field in body) {
       // Encrypt each field that isn't empty
-      if (unencryptedBody[field].length) {
-        encrypted[field] = await publicEncrypt(unencryptedBody[field], publicKey);
+      if (body[field].length) {
+        encrypted[field] = await publicEncrypt(body[field], state.keys.publicKey);
       }
     }
 
-    await setName(axios, encrypted);
-    const displayName = username || `${firstName || ''}${lastName ? ' ' + lastName : ''}`;
-    sessionStorage.setItem('displayname', displayName);
-    await commit('set', { displayName });
+    const response = await this.$axios({
+      method: 'PATCH',
+      url: '/v1/account/name',
+      data: {
+        data: {
+          type: 'user-name',
+          attributes: {
+            ...encrypted
+          }
+        }
+      }
+    });
+
+    await commit('setName', body);
+    body.checksum = response.data.data.meta.checksum;
+    await this.$dexie.user.update(state.id, {
+      name: body
+    });
   },
 
-  /**
-   * Retrieve and decrypt the user's name
-   * @param {AxiosStatic} axios
-   */
-  async getName ({ commit, state }, axios) {
-    let d;
-    let displayName;
+  async updateName ({ commit, state }) {
+    const response = await this.$axios({
+      method: 'GET',
+      url: '/v1/account/name'
+    });
+    const checksum = response.data.data.meta.checksum;
+    const user = await this.$dexie.user.get(state.id);
+
+    if (checksum !== user.name.checksum) {
+      const encrypted = response.data.data.attributes;
+      const body = {};
+      for (const name in encrypted) {
+        if (encrypted[name].length) {
+          body[name] = await privateDecrypt(encrypted[name], state.keys.privateKey);
+        }
+      }
+      body.checksum = checksum;
+      await this.$dexie.user.update(state.id, {
+        name: body
+      });
+    }
+    await commit('setName', { ...await this.$dexie.user.get(state.id) }.name);
+  },
+
+  async updateLoggedInState ({ dispatch, state }) {
     if (state.isLoggedIn) {
-      // Used cached displayname if available
-      if (sessionStorage.getItem('displayName')) {
-        commit('set', { displayName: sessionStorage.getItem('displayName') });
-        return;
+      try {
+        await this.$axios({
+          method: 'GET',
+          url: '/v1/account/whoami'
+        });
       }
-      else {
-        d = await getName(axios);
+      catch {
+        await dispatch('reset');
       }
     }
-    else {
-      // Don't make any API calls if the user isn't logged in
-      commit('set', { displayName: '' });
-      return;
-    }
-
-    // User with personal info that needs to be decrypted
-    if (d.username || d.firstName || d.lastName) {
-      const encodedPrivateKey = state.keys.privateKey;
-      // Import the user's private key
-      const privateKey = await importPrivateKey(encodedPrivateKey);
-
-      // Decrypt relevant properties
-      let firstName;
-      let lastName;
-      let username;
-      if (d.firstName) {
-        firstName = await privateDecrypt(d.firstName, privateKey);
-      }
-      if (d.lastName) {
-        lastName = await privateDecrypt(d.lastName, privateKey);
-      }
-      if (d.username) {
-        username = await privateDecrypt(d.username, privateKey);
-      }
-
-      // Formatting magic
-      displayName = username || `${firstName || ''}${lastName ? ' ' + lastName : ''}`;
-    }
-    // Anonymous user
-    else {
-      displayName = 'Anonymous user';
-    }
-    // Cache the username in session storage
-    sessionStorage.setItem('displayName', displayName);
-    commit('set', { displayName });
   }
 };

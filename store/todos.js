@@ -1,12 +1,8 @@
-import { importPublicKey, importPrivateKey, genSymmetricKey, deepEncrypt, unwrapSymmetricKey, deepDecrypt } from '~/_middleware/crypto';
+import { importPublicKey, importPrivateKey, genSymmetricKey, deepEncrypt, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto';
 
-export const state = () => ([
-  {
-    id: '1234',
-    title: 'Sample List',
-    items: []
-  }
-]);
+const initialState = () => ([]);
+
+export const state = () => ([]);
 
 export const mutations = {
   addList (state, body) {
@@ -32,6 +28,11 @@ export const mutations = {
 };
 
 export const actions = {
+  async reset ({ replaceState }) {
+    await this.$dexie.todos.clear();
+    replaceState(initialState);
+  },
+
   async getLists ({ commit, state, rootState }) {
     const response = await this.$axios({
       method: 'GET',

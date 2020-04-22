@@ -1,7 +1,8 @@
 <template lang="pug">
-  div(class="card")
-    div(class="card-content")
-      article(v-if="!showKeygenLoading" class="media-content")
+div(class="card")
+  div(class="card-content")
+    article(v-if="!showKeygenLoading" class="media-content")
+      form(action="" onsubmit="return false")
         header(class="title is-3") Create an Account
         b-field(label="Email")
           b-input(v-model="fields.email" id="emailInput" type="email" icon="at")
@@ -15,15 +16,13 @@
             b-icon(icon="alert-circle" type="is-danger")
           div(class="media-content")
           p(class="has-text-danger errorMsg") {{ error }}
-      article(v-else class="media-content")
-        header(class="title is-4") Generating your secure master keypair...
-        b-progress(type="is-success")
-        p(class="has-text-danger errorMsg") {{ error }}
+    article(v-else class="media-content")
+      header(class="title is-4") Generating your secure master keypair...
+      b-progress(type="is-success")
+      p(class="has-text-danger errorMsg") {{ error }}
 </template>
 
 <script>
-import * as _auth from '~/_middleware/handlers/auth';
-import * as _crypto from '~/_middleware/crypto';
 export default {
   data () {
     return {
@@ -88,16 +87,15 @@ export default {
       this.error = null;
 
       // Create the user's account
-      await _auth.register(this.$axios, {
-        email: this.fields.email,
-        password: this.fields.password
-      })
-        .catch((err) => {
-          // Set the error message to the 'message' prop returned by the API
-          this.error = err.data.message || 'An unknown error occured, refresh the page and try again.';
-          this.$emit('error', 'registration');
+      try {
+        await this.$store.dispatch('user/register', {
+          email: this.fields.email,
+          password: this.fields.password
         });
-      if (this.error) {
+      }
+      catch (err) {
+        this.error = err.response?.data?.error?.detail || 'An unknown error occured while creating your account, refresh the page and try again.';
+        this.$emit('error', 'registration');
         return;
       }
 
@@ -105,67 +103,33 @@ export default {
       await this.$emit('success', 'registration');
 
       // Log the user in
-      const token = await this.$store.dispatch('user/login', {
-        axios: this.$axios,
-        body: {
+      try {
+        await this.$store.dispatch('user/login', {
           email: this.fields.email,
           password: this.fields.password
-        }
-      })
-        .catch((err) => {
-          this.error = err.data.message || 'An unknown error occured, refresh the page and try again.';
-          this.$emit('error', 'keygen');
         });
-      if (this.error) {
+      }
+      catch (err) {
+        this.error = err.response?.data?.error?.detail || 'An unknown error occured while logging into your account, try logging in using the same email and password you used to create your account later.';
+        this.$emit('error', 'login');
         return;
       }
 
-      // Store the token in the cookies (expires after a week)
-      if (this.$cookie.get('Authorization')) {
-        this.$cookie.delete('Authorization');
-      }
-      this.$cookie.set('Authorization', token, { expires: 7 });
       await this.$emit('success', 'login');
 
-      // Pass the handling logic to the keyGenerate function
-      this.keyGenerate();
-    },
-    /**
-     * @private
-     */
-    async keyGenerate () {
       // Show the key generation loading bar
       this.showKeygenLoading = true;
 
       // Generate the user's master keypair
-      const keyInfo = await _crypto.generateMasterKeypair(this.fields.password)
-        .catch((err) => {
-          this.error = err.message || 'An unknown error occured, refresh the page and try again.';
-          this.$emit('error', 'keygen');
-        });
-      if (this.error) {
-        return;
+      try {
+        await this.$store.dispatch('user/genKeypair', this.fields).catch(err => console.error(err));
+      }
+      catch (err) {
+        this.error = 'An error has occured while generating your secure keypair. This is an unrecoverable error at the moment, contact the developer for assistance.';
+        this.$emit('error', 'keygen');
       }
 
-      /* Store the pubkey and unencrypted private key in the localStorage,
-      and load them into the Vuex state */
-      localStorage.setItem('keys', JSON.stringify({
-        publicKey: keyInfo.keys.publicKey,
-        privateKey: keyInfo.keys.privateKey
-      }));
-      await this.$store.dispatch('user/getKeys');
-
-      // Submit the pubkey, encrypted private key, and PBKDF2 salt to the server for storage
-      await _auth.storeKeypair(this.$axios, { ...keyInfo.keys }, keyInfo.PBKDF2salt)
-        .catch((err) => {
-          this.error = err.data ? err.data.message : 'An unknown error occured, refresh the page and try again.';
-          this.$emit('error', 'keygen');
-        });
-
-      // Emit the success event if no errors occured
-      if (!this.error) {
-        await this.$emit('success', 'keygen');
-      }
+      await this.$emit('success', 'keygen');
     }
   }
 };

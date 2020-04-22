@@ -77,7 +77,7 @@ async function deriveTempKey (passphrase, salt) {
   return crypto.subtle.deriveKey(
     {
       name: 'PBKDF2',
-      hash: 'SHA-512',
+      hash: 'SHA-256',
       salt,
       iterations: 500000
     },
@@ -117,14 +117,19 @@ function cryptoCheck () {
 }
 
 /**
- * @typedef {Object} Keys
- * @property {string} publicKey - RSA public key exported as SPKI and encoded with Base64
- * @property {string} privateKey - RSA private key exported as pkcs8 and encoded with Base64
- * @property {string} encryptedPrivateKey - RSA private key exported as pkcs8,
- * encrypted using AES-GCM, and encoded with Base64
- */
-
-/**
+ * @typedef {object} UsableKeys
+ * @property {CryptoKey} publicKey - Usable CryptoKey object representing an RSA public key
+ * @property {CryptoKey} privateKey - Usable CryptoKey object representing an RSA private key
+ *
+ * @typedef {object} ExportedKeys
+ * @property {string} publicKey - RSA public key exported and encoded with Base64
+ * @property {string} encryptedPrivateKey - RSA private key wrapped with the user's tempkey
+ * and encoded with Base64
+ *
+ * @typedef {object} Keys
+ * @property {UsableKeys} usable
+ * @property {ExportedKeys} exported
+ *
  * @typedef {Object} KeyInfo
  * @property {Keys} keys - Public, private, and encrypted private RSA keys
  * @property {string} PBKDF2salt - Salt used in PBKDF2 along with the passphrase
@@ -160,24 +165,20 @@ export async function generateMasterKeypair (passphrase) {
       name: 'RSA-OAEP',
       modulusLength: 4096,
       publicExponent,
-      hash: 'SHA-512'
+      hash: 'SHA-256'
     },
-    true, // The RSA keypair will become the user's master keypair, and must be extractable for storage
-    ['wrapKey', 'unwrapKey'] // The allowed usages for these keys is to encrypt and decrypt other keys
-  );
+    1, // The RSA keypair will become the user's master keypair, and must be extractable for storage
+    ['wrapKey', 'unwrapKey', 'encrypt', 'decrypt'] // The allowed usages for these keys is to encrypt and decrypt other keys
+  ).catch(() => {
+    throw new Error('Error generating the user\'s public/private keypair');
+  });
 
   /* Generate a random 96 bit IV for usage in encrypting the private key
   (AES-GCM specifies the use of a 96 bit IV) */
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
-  /* Make two copies of the private key, one encoded but not encrypted,
-  and the other encoded and wrapped. The unencrypted key is stored clientside,
-  and the encrypted/wrapped key is stored serverside */
-  const exportedPrivateKey = ABencode(await crypto.subtle.exportKey(
-    'pkcs8',
-    privateKey
-  ));
-  const encryptedPrivateKey = await crypto.subtle.wrapKey(
+  /* Create an encrypted copy of the private key to be stored serverside */
+  const encryptedPrivateKeyBuf = await crypto.subtle.wrapKey(
     'pkcs8',
     privateKey,
     tempKey,
@@ -185,28 +186,36 @@ export async function generateMasterKeypair (passphrase) {
       name: 'AES-GCM',
       iv
     }
-  );
+  ).catch(() => {
+    throw new Error('Error encrypting the user\'s private key');
+  });
 
   // Prepend the IV before the encrypted key, then encode the buffer in base64
-  const storeablePrivateKey = ABencode(ABconcat(iv, encryptedPrivateKey));
+  const encryptedPrivateKey = ABencode(ABconcat(iv, encryptedPrivateKeyBuf));
 
   // Export + encode the public key
   const exportedPublicKey = ABencode(await crypto.subtle.exportKey(
     'spki',
     publicKey
-  ));
+  ).catch(() => {
+    throw new Error('Error exporting the user\'s public key');
+  }));
 
   // Encode the PBKDF2 salt for storage
   const encodedSalt = ABencode(salt);
 
   return {
     keys: {
-      publicKey: exportedPublicKey,
-      privateKey: exportedPrivateKey,
-      encryptedPrivateKey: storeablePrivateKey
+      usable: {
+        publicKey,
+        privateKey
+      },
+      exported: {
+        publicKey: exportedPublicKey,
+        encryptedPrivateKey
+      }
     },
-    PBKDF2salt: encodedSalt,
-    iv: ABencode(iv)
+    PBKDF2salt: encodedSalt
   };
 };
 

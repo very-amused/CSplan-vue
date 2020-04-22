@@ -40,11 +40,10 @@ export default {
 
       // Submit data to backend
       await this.$store.dispatch('user/setName', {
-        axios: this.$axios,
-        unencryptedBody: { ...this.fields }
+        ...this.fields
       })
         .catch((err) => {
-          this.error = err.data.message || 'An unknown error occured while setting your display name. Try again later.';
+          this.error = err.response?.data?.data?.detail || 'An unknown error occured while setting your display name. Try again later.';
           this.$buefy.dialog.alert({
             title: 'Error',
             message: this.error,
@@ -63,8 +62,10 @@ export default {
 </script>
 
 <style scoped>
-.card {
-  min-width: 40rem;
+@media screen and (min-width: 1200px) {
+  .card {
+    min-width: 30rem;
+  }
 }
 </style>
 

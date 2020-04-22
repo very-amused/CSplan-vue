@@ -1,12 +1,11 @@
 <template ref="navbar" lang="pug">
   b-navbar(type="is-dark")
     template(slot="start")
-      b-navbar-item(tag="nuxt-link" to="/") Dashboard
-      b-navbar-item(tag="nuxt-link" to="/todos") Todos
-      b-navbar-item(tag="nuxt-link" to="/") Calendar
+      nuxt-link(v-for="page in pages" :to="page.href" v-slot="{ isActive, href }")
+        b-navbar-item(v-if="page.account ? isLoggedIn : true" tag="nuxt-link" :to="href" :active="isActive && href !== '/'") {{ page.title }}
     client-only(slot="end")
-      template(v-if="user.isLoggedIn")
-        b-navbar-dropdown(right :label="user.displayName")
+      template(v-if="isLoggedIn")
+        b-navbar-dropdown(right :label="displayName" collapsible)
           b-navbar-item(@click="logout") Sign Out
       template(v-else)
         b-navbar-item(tag="div" class="buttons")
@@ -18,26 +17,40 @@
 export default {
   data () {
     return {
-      activeItem: ''
+      pages: [
+        {
+          title: 'Home',
+          href: '/'
+        },
+        {
+          title: 'Todos',
+          href: '/todos',
+          account: true
+        }
+      ]
     };
   },
 
   computed: {
-    user () {
-      const defaultVal = {
-        // Default props for SSR
-        isLoggedIn: undefined,
-        displayName: ''
-      };
+    isLoggedIn () {
+      console.log(this.$store.state.user.isLoggedIn);
+      return this.$store.state.user.isLoggedIn;
+    },
+    displayName () {
+      return this.$store.getters['user/displayName'];
+    }
+  },
 
-      return process.client ? this.$store.state.user : defaultVal;
+  async mounted () {
+    if (this.isLoggedIn) {
+      await this.$store.dispatch('user/updateName');
     }
   },
 
   methods: {
     async logout () {
       // Log the user out in the state
-      await this.$store.dispatch('user/logout', this.$axios);
+      await this.$store.dispatch('user/logout');
     }
   }
 };

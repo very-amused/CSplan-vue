@@ -84,11 +84,13 @@ export default {
 
 <style scoped>
 /* Custom sizing and spacing for forms */
-.card {
-  min-height: 30rem;
-}
 #itemForm {
   min-width: 30rem;
+}
+@media screen and (min-width: 1200px) {
+  .card {
+    min-height: 30rem;
+  }
 }
 #submitButtonContainer {
   position: absolute;

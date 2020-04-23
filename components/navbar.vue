@@ -1,7 +1,7 @@
 <template ref="navbar" lang="pug">
   b-navbar(type="is-dark")
     template(slot="start")
-      nuxt-link(v-for="page in pages" :to="page.href" v-slot="{ isActive, href }")
+      nuxt-link(v-for="page in pages" :key="page.title" :to="page.href" v-slot="{ isActive, href }")
         b-navbar-item(v-if="page.account ? isLoggedIn : true" tag="nuxt-link" :to="href" :active="isActive && href !== '/'") {{ page.title }}
     client-only(slot="end")
       template(v-if="isLoggedIn")
@@ -33,7 +33,6 @@ export default {
 
   computed: {
     isLoggedIn () {
-      console.log(this.$store.state.user.isLoggedIn);
       return this.$store.state.user.isLoggedIn;
     },
     displayName () {

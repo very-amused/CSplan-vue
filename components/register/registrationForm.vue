@@ -122,11 +122,12 @@ export default {
 
       // Generate the user's master keypair
       try {
-        await this.$store.dispatch('user/genKeypair', this.fields).catch(err => console.error(err));
+        await this.$store.dispatch('user/genKeypair', this.fields);
       }
       catch (err) {
         this.error = 'An error has occured while generating your secure keypair. This is an unrecoverable error at the moment, contact the developer for assistance.';
         this.$emit('error', 'keygen');
+        return;
       }
 
       await this.$emit('success', 'keygen');

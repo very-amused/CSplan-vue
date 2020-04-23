@@ -1,4 +1,4 @@
-import { importPublicKey, publicEncrypt, importPrivateKey, privateDecrypt, generateMasterKeypair } from '~/assets/crypto'; // eslint-disable-line
+import { importPublicKey, publicEncrypt, importPrivateKey, privateDecrypt, generateMasterKeypair, genSymmetricKey, deepEncrypt, importSymmetricKey, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto'; // eslint-disable-line
 import { AxiosStatic } from 'axios'; // eslint-disable-line
 
 /**
@@ -188,13 +188,8 @@ export const actions = {
    */
   async setName ({ commit, state }, body) {
     // Encrypt each field that isn't empty
-    const encrypted = {};
-    for (const field in body) {
-      // Encrypt each field that isn't empty
-      if (body[field].length) {
-        encrypted[field] = await publicEncrypt(body[field], state.keys.publicKey);
-      }
-    }
+    const key = await genSymmetricKey(state.keys.publicKey);
+    const encrypted = await deepEncrypt(body, key.usable.symmetricKey);
 
     const response = await this.$axios({
       method: 'PATCH',
@@ -204,6 +199,9 @@ export const actions = {
           type: 'user-name',
           attributes: {
             ...encrypted
+          },
+          meta: {
+            cryptoKey: key.exported.encryptedSymmetricKey
           }
         }
       }
@@ -226,13 +224,13 @@ export const actions = {
 
     if (checksum !== user.name.checksum) {
       const encrypted = response.data.data.attributes;
-      const body = {};
-      for (const name in encrypted) {
-        if (encrypted[name].length) {
-          body[name] = await privateDecrypt(encrypted[name], state.keys.privateKey);
-        }
-      }
-      body.checksum = checksum;
+      const encodedKey = response.data.data.meta.cryptoKey;
+      const key = await unwrapSymmetricKey(encodedKey, state.keys.privateKey);
+      const body = {
+        ...await deepDecrypt(encrypted, key),
+        checksum
+      };
+
       await this.$dexie.user.update(state.id, {
         name: body
       });

@@ -1,6 +1,4 @@
-import { importPublicKey, importPrivateKey, genSymmetricKey, deepEncrypt, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto';
-
-const initialState = () => ([]);
+import { genSymmetricKey, deepEncrypt, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto';
 
 export const state = () => ([]);
 
@@ -28,9 +26,9 @@ export const mutations = {
 };
 
 export const actions = {
-  async reset ({ replaceState }) {
+  async reset ({ state }) {
     await this.$dexie.todos.clear();
-    replaceState(initialState);
+    Object.assign(state, []);
   },
 
   async getLists ({ commit, state, rootState }) {
@@ -40,7 +38,6 @@ export const actions = {
     });
     const data = response.data.data;
     const todos = await this.$dexie.todos.toArray();
-    const privateKey = await importPrivateKey(rootState.user.keys.privateKey);
     for (const identifier of data) {
       if (!todos.find(list => (list.id === identifier.id &&
         list.checksum === identifier.meta.checksum))) {
@@ -58,7 +55,7 @@ export const actions = {
           });
           return;
         }
-        const cryptoKey = await unwrapSymmetricKey(doc.meta.cryptoKey, privateKey);
+        const cryptoKey = await unwrapSymmetricKey(doc.meta.cryptoKey, rootState.user.keys.privateKey);
 
         const encryptedItems = doc.relationships.items.data.map(item => item.attributes);
         const { title, items } = await deepDecrypt({
@@ -93,8 +90,7 @@ export const actions = {
     }
   },
   async addList ({ commit, dispatch, rootState }, list) {
-    const publicKey = await importPublicKey(rootState.user.keys.publicKey);
-    const { usable, exported } = await genSymmetricKey(publicKey);
+    const { usable, exported } = await genSymmetricKey(rootState.user.keys.publicKey);
     const encrypted = await deepEncrypt(list, usable.symmetricKey);
     const mappedItems = encrypted.items.map((item) => {
       return {
@@ -135,6 +131,17 @@ export const actions = {
     // Add to state
     commit('addList', list);
   },
+
+  async removeList ({ commit }, id) {
+    await this.$axios({
+      method: 'DELETE',
+      url: `/v1/todos/${id}`
+    });
+
+    await this.$dexie.todos.delete(id);
+    await commit('removeList', id);
+  },
+
   async addItem ({ state, commit, dispatch, rootState }, { id, item }) {
     // Get the list's symmetric key
     const index = state.findIndex(list => list.id === id);

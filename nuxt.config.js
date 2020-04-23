@@ -73,6 +73,9 @@ export default {
     ** You can extend webpack config here
     */
     extend (config, ctx) {
+      if (process.env.NODE_ENV === 'development') {
+        config.devtool = '#source-map'; // Create full sourcemaps
+      }
     }
   }
 };

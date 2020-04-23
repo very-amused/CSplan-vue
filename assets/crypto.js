@@ -441,15 +441,21 @@ export async function decrypt (ciphertext, symmetricKey) {
   const realCipherbuf = cipherbuf.slice(12);
 
   // Decrypt the ciphertext
-  const plainbuf = await crypto.subtle.decrypt(
-    {
-      name: 'AES-GCM',
-      iv,
-      tagLength: 128
-    },
-    symmetricKey,
-    realCipherbuf
-  );
+  let plainbuf;
+  try {
+    plainbuf = await crypto.subtle.decrypt(
+      {
+        name: 'AES-GCM',
+        iv,
+        tagLength: 128
+      },
+      symmetricKey,
+      realCipherbuf
+    );
+  }
+  catch {
+    return '';
+  }
 
   // Decode using UTF-8 and return the plaintext
   const dec = new TextDecoder('utf-8');

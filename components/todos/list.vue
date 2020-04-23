@@ -2,6 +2,11 @@
     div(class="card")
       div(class="card-content")
         article(class="media-content")
+
+          //- Delete button
+          b-button(@click="openDeleteDialog" type="is-text" size="is-small" class="close-button")
+            b-icon(icon="close" class="delete-icon")
+
           header(class="title is-3") {{ list.title }}
           hr
           div(v-for="(item, index) in list.items" :key="item.id" class="media")
@@ -62,6 +67,16 @@ export default {
   },
 
   methods: {
+    openDeleteDialog () {
+      this.$buefy.dialog.confirm({
+        message: 'Are you sure you want to delete this todo list?',
+        confirmText: 'Sure',
+        type: 'is-danger',
+        onConfirm: async () => {
+          await this.$store.dispatch('todos/removeList', this.id);
+        }
+      });
+    },
     openForm () {
       this.$emit('form-open');
       this.showForm = true;
@@ -133,5 +148,11 @@ $field-margin: 0.75rem;
 }
 p {
   word-break: break-all;
+}
+
+.close-button {
+  position: absolute;
+  top: $field-margin/2;
+  right: $field-margin/2;
 }
 </style>

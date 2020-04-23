@@ -61,7 +61,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 .b-steps {
   margin-top: 1rem;
 }

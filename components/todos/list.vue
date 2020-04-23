@@ -10,12 +10,18 @@
           header(class="title is-3") {{ list.title }}
           hr
           div(v-for="(item, index) in list.items" :key="item.id" class="media")
+
+            //- Left content
             figure(class="media-left")
-              template(v-if="item.completed")
-                b-button(@click="toggleCompletion(index)" rounded type="is-primary")
-                  b-icon(icon="check")
-              template(v-else)
-                b-button(@click="toggleCompletion(index)" rounded type="is-grey" outlined)
+              div(class="columns")
+                div(class="column color-indicator" :style="`background-color: ${item.color}`")
+                div(class="column")
+                  template(v-if="item.completed")
+                    b-button(@click="toggleCompletion(index)" rounded type="is-primary")
+                      b-icon(icon="check")
+                  template(v-else)
+                    b-button(@click="toggleCompletion(index)" rounded type="is-grey" outlined)
+
             article(class="media-content")
               p(class="has-text-weight-bold" type="is-primary") {{ item.title }}
               p {{ item.description }}
@@ -27,19 +33,32 @@
           template(v-if="!showForm")
             b-button(@click="openForm" type="is-grey" outlined expanded)
               b-icon(icon="plus")
+
+          //- Form to add an item
           template(v-else)
             b-button(class="form-close" @click="closeForm" type="is-text")
               b-icon(icon="close")
             b-field
               b-input(v-model="formInputs.title" placeholder="Title" required)
-            b-field
-              b-input(v-model="formInputs.description" placeholder="Description (optional)")
+            b-field(grouped)
+              //- Color picker
+              b-dropdown
+                b-button(slot="trigger" class="color-picker-trigger" rounded :style="`background-color: ${formInputs.color.hex}`")
+                b-dropdown-item(custom paddingless)
+                  color-picker(v-model="formInputs.color" :presetColors="colorsArray" disable-alpha)
+              b-input(v-model="formInputs.description" placeholder="Description (optional)" expanded)
             b-button(@click="addItem" type="is-primary" native-type="submit" expanded)
               b-icon(icon="plus")
 </template>
 
 <script>
+import { Sketch } from 'vue-color';
+import colors from '~/assets/defs/colors';
 export default {
+  components: {
+    colorPicker: Sketch
+  },
+
   props: {
     id: {
       type: String,
@@ -54,7 +73,10 @@ export default {
       showForm: false,
       formInputs: {
         title: '',
-        description: ''
+        description: '',
+        color: {
+          hex: '#FFFFFF'
+        }
       }
     };
   },
@@ -63,6 +85,9 @@ export default {
     list () {
       const index = this.$store.state.todos.findIndex(list => list.id === this.id);
       return this.$store.state.todos[index];
+    },
+    colorsArray () {
+      return Object.values(colors);
     }
   },
 
@@ -95,7 +120,7 @@ export default {
         await this.$store.dispatch('todos/addItem', {
           axios: this.$axios,
           id: this.id,
-          item: { ...this.formInputs, color: '#FFFFFF', completed: false }
+          item: { ...this.formInputs, color: this.formInputs.color.hex, completed: false }
         });
       }
       catch (err) {
@@ -108,10 +133,8 @@ export default {
       }
 
       // Clear the form inputs and hide the form after adding the item
-      this.formInputs = {
-        title: '',
-        description: ''
-      };
+      this.formInputs.title = '';
+      this.formInputs.description = '';
       this.showForm = false;
     },
     async toggleCompletion (index) {
@@ -138,6 +161,16 @@ $field-margin: 0.75rem;
   display: flex;
   flex-direction: column;
   margin-left: 0.5rem;
+}
+.color-indicator {
+  padding: 1.5px;
+}
+.color-picker-trigger {
+  margin-right: $field-margin;
+  margin-left: $field-margin
+}
+.dropdown-content {
+  padding: 0;
 }
 /* Override button width change when icon is added */
 .button.is-rounded {

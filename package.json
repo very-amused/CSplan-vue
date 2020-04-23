@@ -17,6 +17,7 @@
     "dexie": "^2.0.4",
     "nuxt": "^2.12.0",
     "nuxt-buefy": "^0.3.24",
+    "vue-color": "^2.7.1",
     "vue-cookie": "^1.1.4"
   },
   "devDependencies": {

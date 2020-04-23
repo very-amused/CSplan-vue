@@ -1,7 +1,7 @@
 <template lang="pug">
   div(class="card")
     div(class="card-content" id="content")
-      form
+      form(action="" onsubmit="return false")
         b-field(label="Title")
           b-input(v-model="fields.title" maxlength=2000 :has-counter="false")
         span(class="label") Items
@@ -9,26 +9,35 @@
             b-button(rounded size="is-small" style="margin-left: 0.5rem;" slot="trigger")
               b-icon(:icon="showItemForm ? 'chevron-up' : 'plus'")
             b-dropdown-item(custom id="itemForm")
-              form(action="" onsubmit="return false;")
-                b-field(horizontal custom-class="hide")
+              form(action="" onsubmit="return false")
+                b-field(grouped custom-class="hide")
+                  b-dropdown
+                    b-button(slot="trigger" class="color-picker-trigger" rounded :style="`background-color: ${itemFields.color.hex}`")
+                    b-dropdown-item(custom paddingless)
+                      color-picker(v-model="itemFields.color" :presetColors="colorsArray" disable-alpha)
                   b-input(v-model="itemFields.title" id="itemFieldTitle" placeholder="Title" expanded)
-                  b-input(v-model="itemFields.color" type="color")
                 b-field
                   b-input(v-model="itemFields.description" type="textarea" placeholder="Description (optional)")
                 b-field
                   b-button(@click="addItem" native-type="submit")
                     b-icon(icon="plus")
-        b-taglist
-          b-taglist(v-for="(item, index) in items" :key="index" attached)
+        div(class="column")
+          b-taglist(v-for="(item, index) in items" :key="index" attached class="item-tags")
             b-tag(size="is-medium" :title="item.title") {{ item.title }}
             b-tag(size="is-medium" :style="`background-color: ${item.color}`")
         div(id="submitButtonContainer")
-          b-button(@click="addList" type="is-success" rounded id="submitButton")
+          b-button(@click="addList" native-type="submit" type="is-success" rounded id="submitButton")
             b-icon(icon="plus")
 </template>
 
 <script>
+import { Sketch } from 'vue-color';
+import colors from '~/assets/defs/colors';
 export default {
+  components: {
+    colorPicker: Sketch
+  },
+
   data () {
     return {
       showItemForm: false,
@@ -39,9 +48,17 @@ export default {
       itemFields: {
         title: '',
         description: '',
-        color: '#002cff'
+        color: {
+          hex: '#002cff'
+        }
       }
     };
+  },
+
+  computed: {
+    colorsArray () {
+      return Object.values(colors);
+    }
   },
 
   methods: {
@@ -55,7 +72,11 @@ export default {
         document.querySelector('#itemFieldTitle').setCustomValidity('');
       }
 
-      this.items.push({ ...this.itemFields, completed: false });
+      this.items.push({
+        ...this.itemFields,
+        color: this.itemFields.color.hex,
+        completed: false
+      });
       // Clear each field except for the color picker
       this.itemFields.title = this.itemFields.description = '';
       // Close the dropdown
@@ -107,17 +128,17 @@ export default {
 }
 </style>
 
-<style lang="scss">
-$color-selector-margin: 1.5rem;
+<style scoped lang="scss">
+$field-margin: 0.75rem/2;
+
+.color-picker-trigger {
+  margin-right: $field-margin;
+  margin-left: $field-margin
+}
 
 /* Hide empty field label to the left of inputs */
 .hide {
   display: none;
-}
-input[type="color"] {
-  margin-right: $color-selector-margin;
-  margin-left: $color-selector-margin/2;
-  width: $color-selector-margin*2;
 }
 .field:last-child {
   flex-grow: 0 !important;
@@ -126,18 +147,13 @@ input[type="color"] {
   margin-left: 0.5rem;
 }
 
-/* Fix some inconsistencies with the default tag spacing */
-.tags {
-  margin-bottom: 1rem !important;
-}
-.tags:not(:last-child) {
-  margin-right: 0.5rem;
-}
-
 /* Handle tag title overflow */
 .tag span {
   max-width: 10rem;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.item-tags {
+  margin-bottom: 0;
 }
 </style>

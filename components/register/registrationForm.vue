@@ -10,7 +10,7 @@ div(class="card")
           //- The password field uses a custom validation function, but still relies on the html5 validity state of the input
           b-input(v-model="fields.password" id="passwordInput" type="password" password-reveal icon="lock" maxlength="60" @blur="validatePassword")
         b-field
-          b-button(:expanded="true" @click="submit" type="is-primary") Create
+          b-button(:expanded="true" @click="submit" native-type="submit" type="is-primary") Create
         div(v-show="error" class="media")
           figure(class="media-left")
             b-icon(icon="alert-circle" type="is-danger")

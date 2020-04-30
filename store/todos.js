@@ -22,13 +22,16 @@ export const mutations = {
   removeItem (state, { id, itemIndex }) {
     const index = state.findIndex(list => list.id === id);
     state[index].items.splice(itemIndex, 1);
+  },
+  reset (state) {
+    state.splice(0, state.length);
   }
 };
 
 export const actions = {
-  async reset ({ state }) {
+  async reset ({ commit }) {
     await this.$dexie.todos.clear();
-    Object.assign(state, []);
+    commit('reset');
   },
 
   async getLists ({ commit, state, rootState }) {

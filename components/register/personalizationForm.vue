@@ -4,14 +4,14 @@
       div(class="media")
         figure(class="media-left")
           b-icon(id="icon" icon="account-circle" custom-class="avatar-icon")
-        div(class="media-content")
+        form(class="media-content" action="" onsubmit="return false")
           b-field
             b-input(v-model="fields.firstName" placeholder="First Name (optional)" maxlength="100")
           b-field
             b-input(v-model="fields.lastName" placeholder="Last Name (optional)" maxlength="100")
           b-field
             b-input(v-model="fields.username" placeholder="Username (optional)" maxlength="100")
-          b-button(type="is-success" @click="submit" icon-right="arrow-right") Next
+          b-button(native-type="submit" type="is-success" @click="submit" icon-right="arrow-right") Next
 </template>
 
 <script>

@@ -162,6 +162,9 @@ $field-margin: 0.75rem;
   flex-direction: column;
   margin-left: 0.5rem;
 }
+hr {
+  margin: $field-margin 0;
+}
 .color-indicator {
   padding: 1.5px;
 }

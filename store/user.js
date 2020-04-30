@@ -1,5 +1,4 @@
-import { importPublicKey, publicEncrypt, importPrivateKey, privateDecrypt, generateMasterKeypair, genSymmetricKey, deepEncrypt, importSymmetricKey, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto'; // eslint-disable-line
-import { AxiosStatic } from 'axios'; // eslint-disable-line
+import { generateMasterKeypair, genSymmetricKey, deepEncrypt, importSymmetricKey, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto'; // eslint-disable-line
 
 /**
  * @typedef {Object} Keys
@@ -7,33 +6,23 @@ import { AxiosStatic } from 'axios'; // eslint-disable-line
  * @property {string} privateKey - Base64 encoded RSA private key
  */
 
-const initialState = () => ({
-  isLoggedIn: false,
-  id: '',
-  keys: {
-    publicKey: null,
-    privateKey: null
-  },
-  name: {
-    firstName: '',
-    lastName: '',
-    username: ''
-  }
-});
+const initialState = () => {
+  return {
+    isLoggedIn: false,
+    id: '',
+    keys: {
+      publicKey: null,
+      privateKey: null
+    },
+    name: {
+      firstName: '',
+      lastName: '',
+      username: ''
+    }
+  };
+};
 
-export const state = () => ({
-  isLoggedIn: false,
-  id: '',
-  keys: {
-    publicKey: null,
-    privateKey: null
-  },
-  name: {
-    firstName: '',
-    lastName: '',
-    username: ''
-  }
-});
+export const state = initialState;
 
 export const getters = {
   displayName (state) {
@@ -62,6 +51,9 @@ export const mutations = {
   },
   setName (state, name) {
     state.name = { ...name };
+  },
+  reset (state) {
+    Object.assign(state, initialState());
   }
 };
 
@@ -100,7 +92,7 @@ export const actions = {
    * @param {AxiosStatic} axios
    */
   async login ({ commit, state }, body) {
-    const response = await this.$axios({
+    await this.$axios({
       method: 'POST',
       url: '/v1/login',
       data: {
@@ -110,16 +102,11 @@ export const actions = {
             ...body
           }
         }
-      }
+      },
+      withCredentials: true
     });
-    const token = response.data.data.id;
 
     await commit('setLoggedIn', true);
-    // Store the token in the cookies (expires after a week)
-    if (this.$cookie.get('Authorization')) {
-      this.$cookie.delete('Authorization');
-    }
-    this.$cookie.set('Authorization', token, { expires: 7 });
   },
 
   /**
@@ -131,7 +118,7 @@ export const actions = {
       url: '/v1/account/logout'
     });
 
-    dispatch('reset');
+    await dispatch('reset');
     // Reset each namespaced module
     const modules = [
       'todos'
@@ -139,6 +126,11 @@ export const actions = {
     for (const module of modules) {
       await dispatch(`${module}/reset`, null, { root: true });
     }
+  },
+
+  async reset ({ commit }) {
+    await this.$dexie.user.clear();
+    commit('reset');
   },
 
   async genKeypair ({ commit, state }, body) {
@@ -168,11 +160,6 @@ export const actions = {
     await commit('setKeys', {
       ...keyInfo.keys.usable
     });
-  },
-
-  async reset ({ replaceState }) {
-    await this.$dexie.user.clear();
-    this.replaceState(initialState);
   },
 
   /**

@@ -20,8 +20,17 @@ export default {
     return {
       showListForm: false
     };
-  }
+  },
 
+  async mounted () {
+    if (this.$store.state.user.isLoggedIn) {
+      await this.$store.dispatch('todos/getLists');
+    }
+    else {
+      // Don't make any API calls if the user isn't authenticated
+      this.$router.replace('/');
+    }
+  }
 };
 </script>
 
@@ -30,15 +39,15 @@ export default {
   position: fixed;
   bottom: 4rem;
   right: 4rem;
-  width: 8rem;
-  height: 8rem;
+  width: 5rem;
+  height: 5rem;
 }
 </style>
 
 <style>
 /* Plus icon sizing for add todo list button */
 .add-list-button > span > span > i::before {
-  font-size: 4rem !important;
-  margin-top: 2rem !important;
+  font-size: 2rem !important;
+  margin-top: 1rem !important;
 }
 </style>

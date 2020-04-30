@@ -1,6 +1,12 @@
 <template lang="pug">
 div
-  tabs(:list-form-is-active="showListForm" @new="showListForm = true")
+  section(class="hero is-info is-fullheight" v-if="isEmpty")
+    div(class="hero-body")
+      div(class="container")
+        h1(class="title") Encrypted Todo Lists
+        p(class="subtitle") Simple, color coded, fully zero access encrypted. What do you want to do today?
+  section(class="container" v-else)
+    tabs(:list-form-is-active="showListForm" @new="showListForm = true")
   b-button(@click="showListForm = true" class="add-list-button" type="is-link" size="is-large" rounded)
     b-icon(icon="plus")
   b-modal(:active.sync="showListForm")
@@ -20,6 +26,12 @@ export default {
     return {
       showListForm: false
     };
+  },
+
+  computed: {
+    isEmpty () {
+      return this.$store.state.todos.length === 0;
+    }
   },
 
   async mounted () {

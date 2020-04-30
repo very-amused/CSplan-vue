@@ -50,6 +50,7 @@ export default {
     async logout () {
       // Log the user out in the state
       await this.$store.dispatch('user/logout');
+      this.$router.redirect('/');
     }
   }
 };

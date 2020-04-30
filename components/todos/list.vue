@@ -118,7 +118,6 @@ export default {
 
       try {
         await this.$store.dispatch('todos/addItem', {
-          axios: this.$axios,
           id: this.id,
           item: { ...this.formInputs, color: this.formInputs.color.hex, completed: false }
         });
@@ -167,6 +166,7 @@ hr {
 }
 .color-indicator {
   padding: 1.5px;
+  margin: 0.25rem 0;
 }
 .color-picker-trigger {
   margin-right: $field-margin;

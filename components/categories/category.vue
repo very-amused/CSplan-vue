@@ -5,7 +5,7 @@ div(class="card" :style="`background-color: ${category.color.hex}`")
       b-icon(slot="trigger" icon="palette" :style="`color: ${getForegroundColor(category.color.hex)}`")
       b-dropdown-item(custom paddingless)
         client-only
-          color-picker(v-model="category.color" :presetColors="colorsArray" disable-alpha)
+          color-picker(:value="category.color" @input="updateColor($event)" :presetColors="colorsArray" disable-alpha)
     h1(class="title" :style="`color: ${getForegroundColor(category.color.hex)}`" contenteditable @blur="updateTitle($event)") {{ category.title }}
 </template>
 
@@ -52,7 +52,7 @@ export default {
 
       return luminance < 0.5 ? '#FFFFFF' : '#363636';
     },
-    updateTitle (evt, index) {
+    updateTitle (evt) {
       // Disallow empty titles
       if (!evt.target.textContent) {
         evt.target.textContent = 'Untitled';
@@ -61,6 +61,12 @@ export default {
       this.$store.dispatch('categories/updateTitle', {
         index: this.index,
         title: evt.target.textContent
+      });
+    },
+    updateColor (evt) {
+      this.$store.dispatch('categories/updateColor', {
+        index: this.index,
+        color: evt
       });
     }
   }

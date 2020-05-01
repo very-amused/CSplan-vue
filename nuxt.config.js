@@ -32,7 +32,6 @@ export default {
   ** Plugins to load before mounting the App
   */
   plugins: [
-    '~/plugins/vue-cookie',
     { src: '~/plugins/dexie', mode: 'client' },
     { src: '~/plugins/user', mode: 'client' }
   ],

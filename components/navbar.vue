@@ -26,6 +26,11 @@ export default {
           title: 'Todos',
           href: '/todos',
           account: true
+        },
+        {
+          title: 'Categories',
+          href: '/categories',
+          account: true
         }
       ]
     };

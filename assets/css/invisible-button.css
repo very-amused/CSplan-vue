@@ -1,0 +1,7 @@
+.invisible-button {
+  background-color: transparent !important;
+  margin: 0;
+  padding-top: 0;
+  height: 100%;
+  line-height: 1;
+}

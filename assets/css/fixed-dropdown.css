@@ -1,3 +1,6 @@
+.dropdown {
+  margin: 0 !important;
+}
 .dropdown-content {
   padding: 0;
   border-radius: 0;

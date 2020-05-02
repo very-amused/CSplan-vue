@@ -1,15 +1,19 @@
 <template lang="pug">
 div(class="card" :style="`background-color: ${category.color.hex}`")
   div(class="card-header")
-    b-dropdown(class="palette-icon")
-      b-icon(slot="trigger" icon="palette" :style="`color: ${getForegroundColor(category.color.hex)}`")
-      b-dropdown-item(custom paddingless)
-        client-only
-          color-picker(:value="category.color" @input="updateColor($event)" :presetColors="colorsArray" disable-alpha)
+    div(class="icons" :style="`${showIcons ? 'display: block !important' : ''}`")
+      b-dropdown(@active-change="showIcons = $event")
+        b-icon(slot="trigger" icon="palette" :style="`color: ${getForegroundColor(category.color.hex)}`")
+        b-dropdown-item(custom paddingless)
+          client-only
+            color-picker(:value="category.color" @input="updateColor($event)" :presetColors="colorsArray" disable-alpha)
+      b-button(@click="deleteThis" type="is-text invisible-button")
+        b-icon(icon="close" :style="`color: ${getForegroundColor(category.color.hex)}`")
     h1(class="title" :style="`color: ${getForegroundColor(category.color.hex)}`" contenteditable @blur="updateTitle($event)") {{ category.title }}
 </template>
 
 <script>
+import { DialogProgrammatic as Dialog } from 'buefy';
 import { Sketch } from 'vue-color';
 import colors from '~/assets/defs/colors';
 export default {
@@ -24,6 +28,12 @@ export default {
         return 0;
       }
     }
+  },
+
+  data () {
+    return {
+      showIcons: false
+    };
   },
 
   computed: {
@@ -68,6 +78,18 @@ export default {
         index: this.index,
         color: evt
       });
+    },
+    deleteThis () {
+      Dialog.confirm({
+        title: 'Delete?',
+        message: 'Are you sure you want to delete this category?',
+        type: 'is-danger',
+        hasIcon: true,
+        confirmText: 'Sure',
+        onConfirm: async () => {
+          await this.$store.dispatch('categories/removeCategory', this.index);
+        }
+      });
     }
   }
 };
@@ -77,13 +99,17 @@ export default {
 @import '~/assets/css/fixed-dropdown.css';
 </style>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '~/assets/css/invisible-button.css';
 .container {
   display: flex;
   justify-content: center;
 }
 .card {
   margin-top: 1rem;
+  &:hover .icons {
+    display: block !important;
+  }
 }
 .card-header {
   padding: 1rem;
@@ -97,9 +123,12 @@ export default {
   display: flex;
   justify-content: center;
 }
-.palette-icon {
+.icons {
+  display: none !important;
   position: absolute;
   top: 0.25rem;
   right: 0.25rem;
+  display: flex;
+  flex-direction: row;
 }
 </style>

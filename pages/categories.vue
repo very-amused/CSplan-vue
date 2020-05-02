@@ -1,6 +1,8 @@
 <template lang="pug">
 div(class="container")
-  category(v-for="(cat, index) in categories" :index="index" :body="cat")
+  b-button(@click="addCategory" class="add-button" type="is-light")
+    b-icon(icon="plus")
+  category(v-for="(cat, index) in categories" :index="index" :key="cat.id")
 </template>
 
 <script>
@@ -14,6 +16,12 @@ export default {
     categories () {
       return this.$store.state.categories;
     }
+  },
+
+  methods: {
+    async addCategory () {
+      await this.$store.dispatch('categories/createCategory');
+    }
   }
 };
 </script>
@@ -21,6 +29,11 @@ export default {
 <style scoped>
 .container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+}
+.add-button {
+  margin-top: 1rem;
+  width: 30rem;
 }
 </style>

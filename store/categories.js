@@ -1,14 +1,6 @@
-import { genSymmetricKey, deepEncrypt } from '~/assets/crypto';
+import { genSymmetricKey, deepEncrypt, encrypt, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto';
 
-export const state = () => ([
-  {
-    id: '1234',
-    title: 'Sample Category',
-    color: {
-      hex: '#AA00FF'
-    }
-  }
-]);
+export const state = () => ([]);
 
 export const mutations = {
   addCategory (state, body) {
@@ -26,6 +18,50 @@ export const mutations = {
 };
 
 export const actions = {
+  async getCategories ({ commit, state, rootState }) {
+    const response = await this.$axios({
+      method: 'GET',
+      url: '/v1/categories/ids'
+    });
+    const data = response.data.data;
+    const categories = await this.$dexie.categories.toArray();
+
+    for (const identifier of data) {
+      if (!categories.find(category => category.id === identifier.id &&
+      category.checksum === identifier.meta.checksum)) {
+        const response = await this.$axios({
+          method: 'GET',
+          url: `/v1/categories/${identifier.id}`
+        });
+        const doc = response.data.data;
+
+        if (!doc.meta.cryptoKey) {
+          await this.$axios({
+            method: 'DELETE',
+            url: `/v1/categories/${identifier.id}`
+          });
+          return;
+        }
+        const cryptoKey = await unwrapSymmetricKey(doc.meta.cryptoKey, rootState.user.keys.privateKey);
+
+        const { title, color } = await deepDecrypt(doc.attributes, cryptoKey);
+        await this.$dexie.categories.put({
+          id: doc.id,
+          title,
+          color,
+          checksum: doc.meta.checksum,
+          cryptoKey
+        });
+      }
+    }
+
+    const updatedCategories = await this.$dexie.categories.toArray();
+    updatedCategories.forEach((cat) => {
+      if (!state.find(val => val.id === cat.id)) {
+        commit('addCategory', cat);
+      }
+    });
+  },
   async createCategory ({ commit, rootState }) {
     const { usable, exported } = await genSymmetricKey(rootState.user.keys.publicKey);
 
@@ -54,17 +90,33 @@ export const actions = {
     const checksum = response.data.data.meta.checksum;
     commit('addCategory', {
       ...body,
-      id
+      id,
+      cryptoKey: usable.symmetricKey
     });
     this.$dexie.categories.add({
-      ...body,
       id,
-      checksum
+      ...body,
+      checksum,
+      cryptoKey: usable.symmetricKey
     });
   },
   async updateTitle ({ commit, state }, { index, title }) {
     commit('updateTitle', { index, title });
-    await this.$dexie.categories.put(state[index]);
+    await this.$dexie.categories.update(state[index].id, { title });
+
+    const encrypted = await encrypt(title, state[index].cryptoKey);
+    await this.$axios({
+      method: 'PATCH',
+      url: `/v1/categories/${state[index].id}`,
+      data: {
+        data: {
+          type: 'category',
+          attributes: {
+            title: encrypted
+          }
+        }
+      }
+    });
   },
   async updateColor ({ commit, state }, { index, color }) {
     commit('updateColor', { index, color });
@@ -72,6 +124,24 @@ export const actions = {
     await this.$dexie.categories.update(id, {
       color: {
         hex: color.hex
+      }
+    });
+  },
+  async submitColor ({ state }, index) {
+    const id = state[index].id;
+    const encrypted = await encrypt(state[index].color.hex, state[index].cryptoKey);
+    await this.$axios({
+      method: 'PATCH',
+      url: `/v1/categories/${id}`,
+      data: {
+        data: {
+          type: 'category',
+          attributes: {
+            color: {
+              hex: encrypted
+            }
+          }
+        }
       }
     });
   },

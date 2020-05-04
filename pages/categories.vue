@@ -18,6 +18,10 @@ export default {
     }
   },
 
+  async mounted () {
+    await this.$store.dispatch('categories/getCategories');
+  },
+
   methods: {
     async addCategory () {
       await this.$store.dispatch('categories/createCategory');
@@ -26,7 +30,8 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+$mobile-breakpoint: 35rem;
 .container {
   display: flex;
   flex-direction: column;
@@ -34,6 +39,11 @@ export default {
 }
 .add-button {
   margin-top: 1rem;
-  width: 30rem;
+  @media screen and (min-width: $mobile-breakpoint) {
+    width: 30rem;
+  }
+  @media screen and (max-width: $mobile-breakpoint) {
+    width: 10rem;
+  }
 }
 </style>

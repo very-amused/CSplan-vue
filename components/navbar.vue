@@ -45,12 +45,6 @@ export default {
     }
   },
 
-  async mounted () {
-    if (this.isLoggedIn) {
-      await this.$store.dispatch('user/updateName');
-    }
-  },
-
   methods: {
     async logout () {
       // Log the user out in the state

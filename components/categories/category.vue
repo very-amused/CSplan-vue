@@ -2,7 +2,7 @@
 div(class="card" :style="`background-color: ${category.color.hex}`")
   div(class="card-header")
     div(class="icons" :style="`${showIcons ? 'display: block !important' : ''}`")
-      b-dropdown(@active-change="showIcons = $event")
+      b-dropdown(@active-change="showIcons = $event; submitColor($event)")
         b-icon(slot="trigger" icon="palette" :style="`color: ${getForegroundColor(category.color.hex)}`")
         b-dropdown-item(custom paddingless)
           client-only
@@ -73,11 +73,18 @@ export default {
         title: evt.target.textContent
       });
     },
-    updateColor (evt) {
+    updateColor (evt, updateAPI = false) {
       this.$store.dispatch('categories/updateColor', {
         index: this.index,
-        color: evt
+        color: evt,
+        updateAPI
       });
+    },
+    submitColor (evt) {
+      // Submit the color only if the dropdown is closed
+      if (!evt) {
+        this.$store.dispatch('categories/submitColor', this.index);
+      }
     },
     deleteThis () {
       Dialog.confirm({
@@ -110,13 +117,29 @@ export default {
   &:hover .icons {
     display: block !important;
   }
+  /* Override hover behavior on mobile */
+  @media screen and (max-width: 35rem) {
+    .icons {
+      display: block !important;
+    }
+  }
 }
 .card-header {
   padding: 1rem;
 }
-@media screen and (min-width: 1200px) {
+@media screen and (min-width: 35rem) {
   .card {
     min-width: 30rem;
+  }
+}
+@media screen and (max-width: 35rem) {
+  .card {
+    min-width: 10rem;
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+  .card-header {
+    padding-top: 1.5rem;
   }
 }
 .column {

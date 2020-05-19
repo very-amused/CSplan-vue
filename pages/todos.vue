@@ -3,7 +3,7 @@ div
   section(class="hero is-info is-fullheight" v-if="isEmpty")
     div(class="hero-body")
       div(class="container")
-        h1(class="title") Encrypted Todo Lists
+        h1(class="title" style="margin-bottom: 1.5rem !important") Encrypted Todo Lists
         p(class="subtitle") Simple, color coded, fully zero access encrypted. What do you want to do today?
   section(class="container" v-else)
     tabs

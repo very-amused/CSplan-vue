@@ -1,4 +1,5 @@
-import { genSymmetricKey, deepEncrypt, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto';
+import { DialogProgrammatic as Dialog } from 'buefy';
+import { genSymmetricKey, deepEncrypt, unwrapSymmetricKey, deepDecrypt, encrypt } from '~/assets/crypto';
 
 export const state = () => ([]);
 
@@ -9,6 +10,9 @@ export const mutations = {
   removeList (state, id) {
     const index = state.findIndex(list => list.id === id);
     state.splice(index, 1);
+  },
+  setTitle (state, { index, title }) {
+    state[index].title = title;
   },
   addItem (state, { id, item }) {
     const index = state.findIndex(list => list.id === id);
@@ -96,19 +100,6 @@ export const actions = {
     }
   },
 
-  async getCategories ({ commit, state }, index) {
-    const data = await this.$dexie.todos.get(state[index].id);
-    const { items } = data;
-    items.forEach(async (item, itemIndex) => {
-      if (!item.category.id) {
-        return;
-      }
-
-      const category = await this.$dexie.categories.get(item.category.id);
-      commit('setCategory', { index, itemIndex, category });
-    });
-  },
-
   async addList ({ commit, dispatch, rootState }) {
     let list = {
       title: 'Untitled',
@@ -157,6 +148,34 @@ export const actions = {
 
     await this.$dexie.todos.delete(id);
     await commit('removeList', id);
+  },
+
+  async setTitle ({ commit, state }, { id, title }) {
+    const index = state.findIndex(list => list.id === id);
+    commit('setTitle', { index, title });
+
+    try {
+      const response = await this.$axios({
+        method: 'PATCH',
+        url: `/v1/todos/${id}`,
+        data: {
+          data: {
+            type: 'todo-list',
+            attributes: {
+              title: await encrypt(title, state[index].cryptoKey)
+            }
+          }
+        }
+      });
+      await this.$dexie.todos.update(id, { title, checksum: response.data.data.meta.checksum });
+    }
+    catch {
+      Dialog.alert({
+        title: 'Error',
+        message: 'An error has occured while trying to update this todo list\'s title.',
+        type: 'is-danger'
+      });
+    }
   },
 
   async addItem ({ state, commit, dispatch, rootState }, { id, item }) {

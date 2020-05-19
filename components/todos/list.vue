@@ -6,14 +6,14 @@
         b-button(@click="openDeleteDialog" type="is-text" size="is-small" class="close-button")
           b-icon(icon="close" class="delete-icon")
 
-        header(class="title is-3") {{ list.title }}
+        header(class="title is-3" contenteditable @blur="setTitle($event)") {{ list.title }}
         hr
         div(v-for="(item, index) in list.items" :key="item.id" class="media")
 
           //- Left content
           figure(class="media-left")
             template(v-if="item.completed")
-              b-button(@click="toggleCompletion(index)" rounded type="is-primary")
+              b-button(@click="toggleCompletion(index)" rounded :style="`background-color: ${categoryByID(item.category.id) ? categoryByID(item.category.id).color.hex : '#FFFFFF'}`")
                 b-icon(icon="check")
             template(v-else)
               b-button(@click="toggleCompletion(index)" rounded type="is-grey" outlined)
@@ -21,7 +21,7 @@
           article(class="media-content")
             p(class="has-text-weight-bold" type="is-primary") {{ item.title }}
             p {{ item.description }}
-            b-tag(v-if="item.category.color" :style="`background-color: ${item.category.color.hex}; color: ${getForegroundColor(item.category.color.hex)}`") {{ item.category.title }}
+            b-tag(v-if="categoryByID(item.category.id)" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
           figure(class="media-right")
             b-button(@click="removeItem(index)" type="is-text")
               b-icon(icon="close" size="is-small")
@@ -92,11 +92,17 @@ export default {
   },
 
   async mounted () {
-    const index = this.$store.state.todos.findIndex(list => list.id === this.id);
-    await this.$store.dispatch('todos/getCategories', index);
+    await this.$store.dispatch('categories/getCategories');
   },
 
   methods: {
+    categoryByID (id) {
+      const index = this.$store.state.categories.findIndex(category => category.id === id);
+      if (!this.$store.state.categories[index]) {
+        return null;
+      }
+      return this.$store.state.categories[index];
+    },
     getForegroundColor (color) {
       return fgselect(color);
     },
@@ -117,6 +123,12 @@ export default {
     closeForm () {
       this.$emit('form-close');
       this.showForm = false;
+    },
+    async setTitle (evt) {
+      await this.$store.dispatch('todos/setTitle', {
+        id: this.id,
+        title: evt.target.textContent
+      });
     },
     async addItem () {
       // Enforce required title field
@@ -187,6 +199,14 @@ $field-margin: 0.75rem;
 hr {
   margin-bottom: $field-margin;
   margin-top: $field-margin;
+}
+.media-right {
+  display: none;
+}
+.media:hover {
+  .media-right {
+    display: block;
+  }
 }
 .item-form {
   padding: 0.5rem;

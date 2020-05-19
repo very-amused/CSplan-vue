@@ -19,6 +19,9 @@ export const mutations = {
     const item = state[index].items[itemIndex];
     state[index].items.splice(itemIndex, 1, { ...item, completed });
   },
+  setCategory (state, { index, itemIndex, category }) {
+    state[index].items[itemIndex].category = category;
+  },
   removeItem (state, { id, itemIndex }) {
     const index = state.findIndex(list => list.id === id);
     state[index].items.splice(itemIndex, 1);
@@ -92,17 +95,28 @@ export const actions = {
       }
     }
   },
-  async addList ({ commit, dispatch, rootState }, list) {
+
+  async getCategories ({ commit, state }, index) {
+    const data = await this.$dexie.todos.get(state[index].id);
+    const { items } = data;
+    items.forEach(async (item, itemIndex) => {
+      if (!item.category.id) {
+        return;
+      }
+
+      const category = await this.$dexie.categories.get(item.category.id);
+      commit('setCategory', { index, itemIndex, category });
+    });
+  },
+
+  async addList ({ commit, dispatch, rootState }) {
+    let list = {
+      title: 'Untitled',
+      items: []
+    };
+
     const { usable, exported } = await genSymmetricKey(rootState.user.keys.publicKey);
     const encrypted = await deepEncrypt(list, usable.symmetricKey);
-    const mappedItems = encrypted.items.map((item) => {
-      return {
-        type: 'todo-item',
-        attributes: {
-          ...item
-        }
-      };
-    });
 
     const { data } = await this.$axios({
       method: 'POST',
@@ -115,7 +129,7 @@ export const actions = {
           },
           relationships: {
             items: {
-              data: mappedItems
+              data: []
             }
           },
           meta: {

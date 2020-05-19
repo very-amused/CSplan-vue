@@ -1,59 +1,56 @@
 <template lang="pug">
     div(class="card")
-      div(class="card-content")
-        article(class="media-content")
+      div(class="content-custom")
 
-          //- Delete button
-          b-button(@click="openDeleteDialog" type="is-text" size="is-small" class="close-button")
-            b-icon(icon="close" class="delete-icon")
+        //- Delete button
+        b-button(@click="openDeleteDialog" type="is-text" size="is-small" class="close-button")
+          b-icon(icon="close" class="delete-icon")
 
-          header(class="title is-3") {{ list.title }}
-          hr
-          div(v-for="(item, index) in list.items" :key="item.id" class="media")
+        header(class="title is-3") {{ list.title }}
+        hr
+        div(v-for="(item, index) in list.items" :key="item.id" class="media")
 
-            //- Left content
-            figure(class="media-left")
-              div(class="columns")
-                div(class="column color-indicator" :style="`background-color: ${item.color}`")
-                div(class="column")
-                  template(v-if="item.completed")
-                    b-button(@click="toggleCompletion(index)" rounded type="is-primary")
-                      b-icon(icon="check")
-                  template(v-else)
-                    b-button(@click="toggleCompletion(index)" rounded type="is-grey" outlined)
+          //- Left content
+          figure(class="media-left")
+            template(v-if="item.completed")
+              b-button(@click="toggleCompletion(index)" rounded type="is-primary")
+                b-icon(icon="check")
+            template(v-else)
+              b-button(@click="toggleCompletion(index)" rounded type="is-grey" outlined)
 
-            article(class="media-content")
-              p(class="has-text-weight-bold" type="is-primary") {{ item.title }}
-              p {{ item.description }}
-            figure(class="media-right")
-              b-button(@click="removeItem(index)" type="is-text")
-                b-icon(icon="close" size="is-small")
-        hr(v-if="list.items.length > 0")
-        form(action="" onsubmit="return false")
-          template(v-if="!showForm")
-            b-button(@click="openForm" type="is-grey" outlined expanded)
-              b-icon(icon="plus")
+          article(class="media-content")
+            p(class="has-text-weight-bold" type="is-primary") {{ item.title }}
+            p {{ item.description }}
+            b-tag(v-if="item.category.color" :style="`background-color: ${item.category.color.hex}; color: ${getForegroundColor(item.category.color.hex)}`") {{ item.category.title }}
+          figure(class="media-right")
+            b-button(@click="removeItem(index)" type="is-text")
+              b-icon(icon="close" size="is-small")
+      hr(v-if="list.items.length > 0")
+      form(action="" onsubmit="return false" class="item-form")
+        template(v-if="!showForm")
+          b-button(@click="openForm" type="is-grey" outlined expanded)
+            b-icon(icon="plus")
 
-          //- Form to add an item
-          template(v-else)
-            b-button(class="form-close" @click="closeForm" type="is-text")
-              b-icon(icon="close")
-            b-field
-              b-input(v-model="formInputs.title" placeholder="Title" required)
-            b-field(grouped)
-              //- Color picker
-              b-dropdown
-                b-button(slot="trigger" class="color-picker-trigger" rounded :style="`background-color: ${formInputs.color.hex}`")
-                b-dropdown-item(custom paddingless)
-                  color-picker(v-model="formInputs.color" :presetColors="colorsArray" disable-alpha)
-              b-input(v-model="formInputs.description" placeholder="Description (optional)" expanded)
-            b-button(@click="addItem" type="is-primary" native-type="submit" expanded)
-              b-icon(icon="plus")
+        //- Form to add an item
+        template(v-else)
+          b-button(class="form-close" @click="closeForm" type="is-text")
+            b-icon(icon="close")
+          b-field
+            b-input(v-model="formInputs.title" placeholder="Title" required)
+          b-field(grouped)
+            //- Category chooser
+            b-dropdown(v-model="formInputs.category")
+              b-button(slot="trigger" class="color-picker-trigger") {{ formInputs.category.title || 'No Category' }}
+              b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
+            b-input(v-model="formInputs.description" placeholder="Description (optional)" expanded)
+          b-button(@click="addItem" type="is-primary" native-type="submit" expanded)
+            b-icon(icon="plus")
 </template>
 
 <script>
 import { Sketch } from 'vue-color';
 import colors from '~/assets/defs/colors';
+import fgselect from '~/assets/js/fgselect';
 export default {
   components: {
     colorPicker: Sketch
@@ -74,8 +71,8 @@ export default {
       formInputs: {
         title: '',
         description: '',
-        color: {
-          hex: '#FFFFFF'
+        category: {
+          id: null
         }
       }
     };
@@ -88,10 +85,21 @@ export default {
     },
     colorsArray () {
       return Object.values(colors);
+    },
+    categories () {
+      return this.$store.state.categories;
     }
   },
 
+  async mounted () {
+    const index = this.$store.state.todos.findIndex(list => list.id === this.id);
+    await this.$store.dispatch('todos/getCategories', index);
+  },
+
   methods: {
+    getForegroundColor (color) {
+      return fgselect(color);
+    },
     openDeleteDialog () {
       this.$buefy.dialog.confirm({
         message: 'Are you sure you want to delete this todo list?',
@@ -119,7 +127,7 @@ export default {
       try {
         await this.$store.dispatch('todos/addItem', {
           id: this.id,
-          item: { ...this.formInputs, color: this.formInputs.color.hex, completed: false }
+          item: { ...this.formInputs, category: { id: this.formInputs.category.id }, completed: false }
         });
       }
       catch (err) {
@@ -152,6 +160,15 @@ export default {
 };
 </script>
 
+<style>
+.card .media:not(:last-child) {
+  margin-bottom: 0;
+}
+.title {
+  margin-bottom: 0 !important;
+}
+</style>
+
 <style lang="scss" scoped>
 $button-width: 34px;
 $field-margin: 0.75rem;
@@ -159,10 +176,20 @@ $field-margin: 0.75rem;
 .card {
   display: flex;
   flex-direction: column;
-  margin-left: 0.5rem;
+  margin-bottom: 0 !important;
+}
+.content-custom {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 1rem;
+  margin-bottom: 0;
 }
 hr {
-  margin: $field-margin 0;
+  margin-bottom: $field-margin;
+  margin-top: $field-margin;
+}
+.item-form {
+  padding: 0.5rem;
 }
 .color-indicator {
   padding: 1.5px;

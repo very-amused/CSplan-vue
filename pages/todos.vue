@@ -6,11 +6,9 @@ div
         h1(class="title") Encrypted Todo Lists
         p(class="subtitle") Simple, color coded, fully zero access encrypted. What do you want to do today?
   section(class="container" v-else)
-    tabs(:list-form-is-active="showListForm" @new="showListForm = true")
-  b-button(@click="showListForm = true" class="add-list-button" type="is-link" size="is-large" rounded)
+    tabs
+  b-button(@click="addList" class="add-list-button" type="is-link" size="is-large" rounded)
     b-icon(icon="plus")
-  b-modal(:active.sync="showListForm")
-    addListForm
 </template>
 
 <script>
@@ -30,7 +28,7 @@ export default {
 
   computed: {
     isEmpty () {
-      return this.$store.state.todos.length === 0;
+      return !this.$store.state.todos.length;
     }
   },
 
@@ -41,6 +39,12 @@ export default {
     else {
       // Don't make any API calls if the user isn't authenticated
       this.$router.replace('/');
+    }
+  },
+
+  methods: {
+    async addList () {
+      await this.$store.dispatch('todos/addList');
     }
   }
 };

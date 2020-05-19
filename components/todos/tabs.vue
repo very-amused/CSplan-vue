@@ -1,7 +1,7 @@
 <template lang="pug">
 client-only
   b-tabs(v-model="tabIndex" type="is-toggle")
-    b-tab-item(v-for="(list, index) in lists" :key="list.id" :label="`${index + 1}. ${list.title || 'Untitled'}`")
+    b-tab-item(v-for="(list, index) in lists" :key="list.id" :label="list.title")
       list(:id="list.id" @form-open="listFormIsActive = true" @form-close="listFormIsActive = false")
 </template>
 

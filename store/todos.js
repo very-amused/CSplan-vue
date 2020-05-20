@@ -26,6 +26,14 @@ export const mutations = {
   setCategory (state, { index, itemIndex, category }) {
     state[index].items[itemIndex].category = category;
   },
+  toggleEditable (state, { index, itemIndex }) {
+    const item = state[index].items[itemIndex];
+    state[index].items.splice(itemIndex, 1, { ...item, editable: !item.editable });
+  },
+  updateItem (state, { index, itemIndex, item }) {
+    const old = state[index].items[itemIndex];
+    state[index].items.splice(itemIndex, 1, { ...old, ...item });
+  },
   removeItem (state, { id, itemIndex }) {
     const index = state.findIndex(list => list.id === id);
     state[index].items.splice(itemIndex, 1);
@@ -44,32 +52,26 @@ export const actions = {
   async getLists ({ commit, state, rootState }) {
     const response = await this.$axios({
       method: 'GET',
-      url: '/v1/todos/ids'
+      url: '/v1/todos'
     });
     const data = response.data.data;
     const todos = await this.$dexie.todos.toArray();
-    for (const identifier of data) {
-      if (!todos.find(list => (list.id === identifier.id &&
-        list.checksum === identifier.meta.checksum))) {
-        const response = await this.$axios({
-          method: 'GET',
-          url: `/v1/todos/${identifier.id}`
-        });
-        const doc = response.data.data;
-
-        if (!doc.meta.cryptoKey) {
+    for (const todo of data) {
+      if (!todos.find(list => (list.id === todo.id &&
+        list.checksum === todo.meta.checksum))) {
+        if (!todo.meta.cryptoKey) {
           // Delete any todo list without a corresponding cryptokey
           await this.$axios({
             method: 'DELETE',
-            url: `/v1/todos/${identifier.id}`
+            url: `/v1/todos/${todo.id}`
           });
           return;
         }
-        const cryptoKey = await unwrapSymmetricKey(doc.meta.cryptoKey, rootState.user.keys.privateKey);
+        const cryptoKey = await unwrapSymmetricKey(todo.meta.cryptoKey, rootState.user.keys.privateKey);
 
-        const encryptedItems = doc.relationships.items.data.map(item => item.attributes);
+        const encryptedItems = todo.relationships.items.data.map(item => item.attributes);
         const { title, items } = await deepDecrypt({
-          title: doc.attributes.title,
+          title: todo.attributes.title,
           items: encryptedItems
         }, cryptoKey);
 
@@ -81,8 +83,8 @@ export const actions = {
         });
 
         const list = {
-          id: doc.id,
-          checksum: doc.meta.checksum,
+          id: todo.id,
+          checksum: todo.meta.checksum,
           title,
           items: mappedItems,
           cryptoKey
@@ -152,6 +154,10 @@ export const actions = {
 
   async setTitle ({ commit, state }, { id, title }) {
     const index = state.findIndex(list => list.id === id);
+    if (!title) {
+      commit('setTitle', { index, title: 'Untitled' });
+      return;
+    }
     commit('setTitle', { index, title });
 
     try {
@@ -201,8 +207,34 @@ export const actions = {
     const list = await this.$dexie.todos.get(id);
     list.items.push(item);
     await this.$dexie.todos.put(list);
-    commit('addItem', { id, item });
+    commit('addItem', { id, item: { ...item, editable: false } });
   },
+
+  async updateItem ({ commit, state }, { index, itemIndex, item }) {
+    item.title = item.title.length ? item.title : 'Untitled';
+    commit('updateItem', { index, itemIndex, item });
+
+    const encrypted = await deepEncrypt(item, state[index].cryptoKey);
+    const id = state[index].id;
+
+    const list = await this.$dexie.todos.get(id);
+    list.items[itemIndex] = { ...list.items[itemIndex], ...item };
+    await this.$dexie.todos.update(id, { items: list.items });
+
+    await this.$axios({
+      method: 'PATCH',
+      url: `/v1/todos/${state[index].id}/items/${itemIndex}`,
+      data: {
+        data: {
+          type: 'todo-item',
+          attributes: {
+            ...encrypted
+          }
+        }
+      }
+    });
+  },
+
   async toggleCompletion ({ commit, state, rootState }, { id, itemIndex }) {
     const index = state.findIndex(list => list.id === id);
     const completed = !state[index].items[itemIndex].completed;

@@ -6,34 +6,40 @@
         b-button(@click="openDeleteDialog" type="is-text" size="is-small" class="close-button")
           b-icon(icon="close" class="delete-icon")
 
-        header(class="title is-3" contenteditable @blur="setTitle($event)") {{ list.title }}
+        header(class="title is-3" contenteditable @blur="preventEmpty($event); setTitle($event)") {{ list.title }}
         hr
         div(v-for="(item, index) in list.items" :key="item.id" class="media")
 
           //- Left content
           figure(class="media-left")
             template(v-if="item.completed")
-              b-button(@click="toggleCompletion(index)" rounded :style="`background-color: ${categoryByID(item.category.id) ? categoryByID(item.category.id).color.hex : '#FFFFFF'}`")
+              b-button(@click="toggleCompletion(index)" rounded type="is-text" :style="`background-color: ${categoryByID(item.category.id) ? categoryByID(item.category.id).color.hex : '#FFFFFF'}; color: ${categoryByID(item.category.id) ? getForegroundColor(categoryByID(item.category.id).color.hex) : '#000000'}`")
                 b-icon(icon="check")
             template(v-else)
               b-button(@click="toggleCompletion(index)" rounded type="is-grey" outlined)
 
+          //- Item content
           article(class="media-content")
-            p(class="has-text-weight-bold" type="is-primary") {{ item.title }}
-            p {{ item.description }}
+            p(:id="`title-${index}-${id}`" @blur="preventEmpty($event)" class="has-text-weight-bold" type="is-text" :contenteditable="item.editable" placeholder="Untitled" @keydown.enter="toggleEditable(index)") {{ item.title }}
+            p(:id="`description-${index}-${id}`" :contenteditable="item.editable" placeholder="Description...") {{ item.description }}
             b-tag(v-if="categoryByID(item.category.id)" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
-          figure(class="media-right")
-            b-button(@click="removeItem(index)" type="is-text")
+
+          //- Right content
+          figure(class="media-right" :style="item.editable ? 'display: flex !important' : ''")
+            b-button(@click="toggleEditable(index)" rounded type="is-text" :style="(item.editable && categoryByID(item.category.id)) ? `background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}` : ''")
+              b-icon(icon="pencil" size="is-small")
+            b-button(@click="removeItem(index)" rounded type="is-text")
               b-icon(icon="close" size="is-small")
-      hr(v-if="list.items.length > 0")
+
+      hr(v-if="list.items.length > 0" style="margin-bottom: 0")
       form(action="" onsubmit="return false" class="item-form")
         template(v-if="!showForm")
-          b-button(@click="openForm" type="is-grey" outlined expanded)
+          b-button(@click="showForm = true" type="is-grey" outlined expanded)
             b-icon(icon="plus")
 
         //- Form to add an item
         template(v-else)
-          b-button(class="form-close" @click="closeForm" type="is-text")
+          b-button(class="form-close" @click="showForm = false" type="is-text")
             b-icon(icon="close")
           b-field
             b-input(v-model="formInputs.title" placeholder="Title" required)
@@ -48,19 +54,20 @@
 </template>
 
 <script>
-import { Sketch } from 'vue-color';
 import colors from '~/assets/defs/colors';
 import fgselect from '~/assets/js/fgselect';
 export default {
-  components: {
-    colorPicker: Sketch
-  },
-
   props: {
+    index: {
+      type: Number,
+      default () {
+        return 0;
+      }
+    },
     id: {
       type: String,
       default () {
-        return '0';
+        return '';
       }
     }
   },
@@ -80,8 +87,7 @@ export default {
 
   computed: {
     list () {
-      const index = this.$store.state.todos.findIndex(list => list.id === this.id);
-      return this.$store.state.todos[index];
+      return this.$store.state.todos[this.index];
     },
     colorsArray () {
       return Object.values(colors);
@@ -116,19 +122,16 @@ export default {
         }
       });
     },
-    openForm () {
-      this.$emit('form-open');
-      this.showForm = true;
-    },
-    closeForm () {
-      this.$emit('form-close');
-      this.showForm = false;
-    },
     async setTitle (evt) {
       await this.$store.dispatch('todos/setTitle', {
         id: this.id,
         title: evt.target.textContent
       });
+    },
+    preventEmpty (evt) {
+      if (evt.target.textContent.length <= 1) {
+        evt.target.textContent = 'Untitled';
+      }
     },
     async addItem () {
       // Enforce required title field
@@ -162,6 +165,30 @@ export default {
         itemIndex: index
       });
     },
+    toggleEditable (index) {
+      // If an edit was made, push them to the state
+      if (this.$store.state.todos[this.index].items[index].editable === true) {
+        this.updateItem(index);
+      }
+
+      this.$store.commit('todos/toggleEditable', {
+        index: this.index,
+        itemIndex: index
+      });
+    },
+    async updateItem (index) {
+      const title = document.querySelector(`#title-${index}-${this.id}`).textContent || 'Untitled';
+      const description = document.querySelector(`#description-${index}-${this.id}`).textContent;
+
+      await this.$store.dispatch('todos/updateItem', {
+        index: this.index,
+        itemIndex: index,
+        item: {
+          title,
+          description
+        }
+      });
+    },
     async removeItem (index) {
       await this.$store.dispatch('todos/removeItem', {
         id: this.id,
@@ -178,6 +205,16 @@ export default {
 }
 .title {
   margin-bottom: 0 !important;
+}
+[contenteditable=true][placeholder]:empty:before {
+  content: attr(placeholder);
+  display: block;
+  color: #4A4A4A66
+}
+[placeholder="Untitled"]:empty:before {
+  content: attr(placeholder);
+  display: block;
+  color: #4A4A4A66
 }
 </style>
 
@@ -205,11 +242,12 @@ hr {
 }
 .media:hover {
   .media-right {
-    display: block;
+    display: flex;
+    flex-direction: row;
   }
 }
 .item-form {
-  padding: 0.5rem;
+  padding: 0.75rem;
 }
 .color-indicator {
   padding: 1.5px;

@@ -203,9 +203,6 @@ export default {
 .card .media:not(:last-child) {
   margin-bottom: 0;
 }
-.title {
-  margin-bottom: 0 !important;
-}
 [contenteditable=true][placeholder]:empty:before {
   content: attr(placeholder);
   display: block;
@@ -225,6 +222,9 @@ $field-margin: 0.75rem;
 .card {
   display: flex;
   flex-direction: column;
+  margin-bottom: 0 !important;
+}
+.title {
   margin-bottom: 0 !important;
 }
 .content-custom {

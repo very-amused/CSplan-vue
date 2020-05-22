@@ -1,0 +1,9 @@
+.v-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+.v-group.mt-1 {
+  margin-top: 1rem;
+}

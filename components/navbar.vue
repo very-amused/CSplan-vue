@@ -10,7 +10,7 @@
       template(v-else)
         b-navbar-item(tag="div" class="buttons")
           b-button(tag="nuxt-link" to="/account/register" type="is-light" rounded) Register
-          b-button(type="is-primary" rounded) Log in
+          b-button(tag="nuxt-link" to="/account/login" type="is-primary" rounded) Log in
 </template>
 
 <script>
@@ -53,7 +53,7 @@ export default {
     async logout () {
       // Log the user out in the state
       await this.$store.dispatch('user/logout');
-      this.$router.redirect('/');
+      this.$router.push('/');
     }
   }
 };

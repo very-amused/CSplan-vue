@@ -52,7 +52,7 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style scoped lang="scss">
 .container {
   display: flex;
   flex-direction: column;

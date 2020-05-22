@@ -31,6 +31,10 @@ export default {
           title: 'Categories',
           href: '/categories',
           account: true
+        },
+        {
+          title: 'Timer',
+          href: '/timer'
         }
       ]
     };

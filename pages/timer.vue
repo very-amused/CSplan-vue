@@ -1,8 +1,11 @@
 <template lang="pug">
 div(class="container")
-  timer(ref="timer" :size="sizes[size].value")
+  timer(ref="timer" :size="sizes[size].value" :sound="sounds[sound]")
   div(class="controls")
-    b-button(v-for="(s, index) in sizes" :key="s.value" @click="size = index" :type="s.value === sizes[size].value ? 'is-primary' : 'is-text'") {{ s.name }}
+    section(class="group")
+      b-button(v-for="(s, index) in sizes" :key="s.value" @click="size = index" :type="size === index ? 'is-primary' : 'is-text'") {{ s.name }}
+    section(class="group")
+      b-button(v-for="(n, index) in sounds" :key="n.mp3" @click="sound = index" :type="sound === index ? 'is-primary' : 'is-text'") {{ n.name }}
 </template>
 
 <script>
@@ -15,6 +18,7 @@ export default {
   data () {
     return {
       size: 1,
+      sound: 0,
       sizes: [
         {
           name: 'Small',
@@ -27,6 +31,20 @@ export default {
         {
           name: 'Large',
           value: 12
+        }
+      ],
+      sounds: [
+        {
+          name: 'Microwave',
+          mp3: 'microwave.mp3'
+        },
+        {
+          name: 'Pink Noise',
+          mp3: 'pink_noise.mp3'
+        },
+        {
+          name: 'Japanese Bruh Sound Effect',
+          mp3: 'bruh.mp3'
         }
       ]
     };
@@ -41,10 +59,19 @@ export default {
   justify-content: center;
   align-items: center;
   height: 60vh;
+  .group {
+    margin-top: 1.5rem;
+  }
 }
 .controls {
   position: fixed;
-  bottom: 5rem;
+  bottom: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  .group {
+    flex-direction: row;
+  }
   /* Hide size controls on mobile (where they aren't functional anyway) */
   @media screen and (max-width: 1200px) {
     display: none;

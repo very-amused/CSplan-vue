@@ -29,8 +29,8 @@ div(class="main")
       b-button(@click="stop(); time = 0" size="is-large" class="mb")
         b-icon(icon="close" size="is-large")
 
-    audio(id="notification")
-      source(src="/audio/bruh.mp3" type="audio/mpeg")
+    audio(id="notification" loop)
+      source(:src="`/audio/${sound.mp3}`" type="audio/mpeg")
 </template>
 
 <script>
@@ -45,6 +45,15 @@ export default {
       type: Number,
       default () {
         return 5;
+      }
+    },
+    sound: {
+      type: Object,
+      default () {
+        return {
+          name: 'Microwave',
+          mp3: 'microwave.mp3'
+        };
       }
     }
   },
@@ -124,18 +133,21 @@ export default {
       clearInterval(this.tickInterval);
     },
     alert () {
+      // Play audio alert
       const audio = document.querySelector('#notification');
+      audio.load();
       audio.play();
+
+      // Show the user a notification
       if (Notification.permission === 'granted') {
         const notification = new Notification(this.title);
         notification.onclose = () => {
-          // Pause + reload to set audio position back to the beginning
           audio.pause();
-          audio.load();
         };
       }
       else {
         alert(this.title);
+        audio.pause();
       }
     }
   }

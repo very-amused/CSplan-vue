@@ -1,32 +1,36 @@
 <template lang="pug">
-section
-  b-field(class="custom")
-    timer-button(v-show="!running" @click="time += 60 * 60" icon="plus")
-    p(class="is-family-monospace") {{ hours.string }}
-    timer-button(v-show="!running" @click="time -= 60 * 60" icon="minus")
+div(class="main")
+  b-field
+    b-input(v-model="title" size="is-large")
 
-  div(class="separator")
+  section(class="horizontal" :style="`font-size: ${size}rem`")
+    b-field(class="custom")
+      timer-button(v-show="!running" @click="time += 60 * 60" icon="plus")
+      p(class="is-family-monospace") {{ hours.string }}
+      timer-button(v-show="!running" @click="time -= 60 * 60" icon="minus")
 
-  b-field(class="custom")
-    timer-button(v-show="!running" @click="time += 60" icon="plus")
-    p(class="is-family-monospace") {{ minutes.string }}
-    timer-button(v-show="!running" @click="time -= 60" icon="minus")
+    div(class="separator")
 
-  div(class="separator")
+    b-field(class="custom")
+      timer-button(v-show="!running" @click="time += 60" icon="plus")
+      p(class="is-family-monospace") {{ minutes.string }}
+      timer-button(v-show="!running" @click="time -= 60" icon="minus")
 
-  b-field(class="custom")
-    timer-button(v-show="!running" @click="time++" icon="plus")
-    p(class="is-family-monospace") {{ seconds.string }}
-    timer-button(v-show="!running" @click="time--" icon="minus")
+    div(class="separator")
 
-  b-field(class="custom")
-    b-button(@click="running ? stop() : start()" size="is-large" class="mb")
-      b-icon(icon="timer" :type="running ? 'is-success' : 'is-text'" size="is-large")
-    b-button(@click="stop(); time = 0" size="is-large" class="mb")
-      b-icon(icon="close" size="is-large")
+    b-field(class="custom")
+      timer-button(v-show="!running" @click="time++" icon="plus")
+      p(class="is-family-monospace") {{ seconds.string }}
+      timer-button(v-show="!running" @click="time--" icon="minus")
 
-  audio(id="notification")
-    source(src="/audio/bruh.mp3" type="audio/mpeg")
+    b-field(class="custom")
+      b-button(@click="running ? stop() : start()" size="is-large" class="mb")
+        b-icon(icon="timer" :type="running ? 'is-success' : 'is-text'" size="is-large")
+      b-button(@click="stop(); time = 0" size="is-large" class="mb")
+        b-icon(icon="close" size="is-large")
+
+    audio(id="notification")
+      source(src="/audio/bruh.mp3" type="audio/mpeg")
 </template>
 
 <script>
@@ -36,8 +40,18 @@ export default {
     timerButton
   },
 
+  props: {
+    size: {
+      type: Number,
+      default () {
+        return 5;
+      }
+    }
+  },
+
   data () {
     return {
+      title: 'Timer',
       time: 0,
       tickInterval: null,
       running: false
@@ -113,7 +127,7 @@ export default {
       const audio = document.querySelector('#notification');
       audio.play();
       if (Notification.permission === 'granted') {
-        const notification = new Notification('Your timer is done!!!');
+        const notification = new Notification(this.title);
         notification.onclose = () => {
           // Pause + reload to set audio position back to the beginning
           audio.pause();
@@ -121,21 +135,29 @@ export default {
         };
       }
       else {
-        alert('Your timer is done!!!');
+        alert(this.title);
       }
     }
   }
 };
 </script>
 
-<style scoped>
-section {
+<style lang="scss" scoped>
+header {
+  text-align: center;
+}
+div.main {
+  margin-top: 1.5rem;
+}
+section.horizontal {
+  margin-top: 1.5rem;
   display: flex;
-  height: 80vh;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  font-size: 5rem;
+  @media screen and (max-width: 1200px) {
+    font-size: 2rem !important;
+  }
 }
 .field.custom {
   display: flex;

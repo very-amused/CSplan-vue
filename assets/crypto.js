@@ -232,7 +232,7 @@ export function importPublicKey (encodedPublicKey) {
     publicKey,
     {
       name: 'RSA-OAEP',
-      hash: 'SHA-512'
+      hash: 'SHA-256'
     },
     0, // Not exportable
     ['encrypt', 'wrapKey']
@@ -260,6 +260,47 @@ export function importPrivateKey (encodedPrivateKey) {
     0, // Not exportable
     ['decrypt', 'unwrapKey']
   );
+}
+
+/**
+ * Unwrap the user's master keypair
+ * @param {string} passphrase - The user's password
+ * @param {object} keydata
+ */
+export async function unwrapMasterKeypair (passphrase, keydata) {
+  // Import the user's public key
+  const publicKey = await importPublicKey(keydata.publicKey);
+
+  // Derive a tempkey using the same password and salt as were used during account creation
+  const saltBuf = ABdecode(keydata.PBKDF2salt);
+  const tempKey = await deriveTempKey(passphrase, saltBuf);
+
+  // Decrypt the user's private key
+  const encryptedPrivateBuf = ABdecode(keydata.privateKey);
+  const iv = encryptedPrivateBuf.slice(0, 12);
+  const realEncryptedPrivateBuf = encryptedPrivateBuf.slice(12);
+  const privateKey = await crypto.subtle.unwrapKey(
+    'pkcs8',
+    realEncryptedPrivateBuf,
+    tempKey,
+    {
+      name: 'AES-GCM',
+      iv
+    },
+    {
+      name: 'RSA-OAEP',
+      hash: 'SHA-256'
+    },
+    0,
+    ['unwrapKey', 'decrypt']
+  );
+
+  return {
+    usable: {
+      privateKey,
+      publicKey
+    }
+  };
 }
 
 /**

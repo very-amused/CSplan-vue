@@ -14,6 +14,9 @@ export const mutations = {
   },
   updateColor (state, { index, color }) {
     state[index].color.hex = color.hex;
+  },
+  reset (state) {
+    state.splice(0, state.length);
   }
 };
 
@@ -62,6 +65,12 @@ export const actions = {
       }
     });
   },
+
+  async reset ({ commit }) {
+    await this.$dexie.categories.clear();
+    commit('reset');
+  },
+
   async createCategory ({ commit, rootState }) {
     const { usable, exported } = await genSymmetricKey(rootState.user.keys.publicKey);
 

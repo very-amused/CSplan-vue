@@ -1,4 +1,4 @@
-import { generateMasterKeypair, genSymmetricKey, deepEncrypt, importSymmetricKey, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto'; // eslint-disable-line
+import { generateMasterKeypair, genSymmetricKey, deepEncrypt, importSymmetricKey, unwrapSymmetricKey, deepDecrypt, unwrapMasterKeypair } from '~/assets/crypto'; // eslint-disable-line
 
 /**
  * @typedef {Object} Keys
@@ -92,7 +92,7 @@ export const actions = {
    * @param {AxiosStatic} axios
    */
   async login ({ commit, state }, body) {
-    await this.$axios({
+    const { data } = await this.$axios({
       method: 'POST',
       url: '/v1/login',
       data: {
@@ -106,6 +106,15 @@ export const actions = {
       withCredentials: true
     });
 
+    const id = data.data.relationships.user.data.id;
+    const keydata = data.data.relationships.keys.data.attributes;
+    await this.$dexie.user.put({ id });
+    const keys = await unwrapMasterKeypair(body.password, keydata);
+    await this.$dexie.user.update(id, {
+      keys: keys.usable
+    });
+    commit('setKeys', keys.usable);
+    commit('setID', id);
     await commit('setLoggedIn', true);
   },
 
@@ -121,7 +130,8 @@ export const actions = {
     await dispatch('reset');
     // Reset each namespaced module
     const modules = [
-      'todos'
+      'todos',
+      'categories'
     ];
     for (const module of modules) {
       await dispatch(`${module}/reset`, null, { root: true });
@@ -209,7 +219,7 @@ export const actions = {
     const checksum = response.data.data.meta.checksum;
     const user = await this.$dexie.user.get(state.id);
 
-    if (checksum !== user.name.checksum) {
+    if (checksum !== user.name?.checksum) {
       const encrypted = response.data.data.attributes;
       const encodedKey = response.data.data.meta.cryptoKey;
       const key = await unwrapSymmetricKey(encodedKey, state.keys.privateKey);

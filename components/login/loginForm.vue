@@ -2,14 +2,14 @@
 div(class="card")
   section(class="card-content-slim")
     header(class="title") Login
-    form(action="" onsubmit="return false")
+    form(onsubmit="return false")
       b-field(label="Email")
-        b-input(v-model="fields.email" id="email" type="email" icon="at")
+        b-input(v-model="fields.email" ref="email" type="email" icon="at")
       b-field(label="Password")
-        b-input(v-model="fields.password" id="password" type="password" icon="lock" maxlength=60)
+        b-input(v-model="fields.password" ref="password" type="password" icon="lock" maxlength=60)
       b-button(@click="submit" native-type="submit" type="is-primary" expanded) Submit
-    section(class="v-group mt-1")
-      span {{ error.message }}
+    section(class="v-group error-message")
+      span(class="has-text-danger") {{ error.message }}
 </template>
 
 <script>
@@ -28,10 +28,10 @@ export default {
   },
 
   methods: {
+    // Validate each field via HTML5
     validate () {
       for (const field in this.fields) {
-        const el = document.querySelector(`#${field}`);
-        if (!el.checkValidity() || !el.value.length) {
+        if (!this.$refs[field].checkHtml5Validity()) {
           return false;
         }
       }
@@ -46,7 +46,6 @@ export default {
         .catch((err) => {
           if (err.response.data.error) {
             const body = err.response.data.error;
-            this.error.title = `${body.status} - ${body.title}`;
             this.error.message = body.detail;
           }
         });
@@ -58,4 +57,7 @@ export default {
 <style scoped>
 @import '~/assets/css/slim-card.css';
 @import '~/assets/css/v-group.css';
+.error-message {
+  margin-top: 0.5rem;
+}
 </style>

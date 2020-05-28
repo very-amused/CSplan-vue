@@ -1,5 +1,4 @@
-import { DialogProgrammatic as Dialog } from 'buefy';
-import { genSymmetricKey, deepEncrypt, unwrapSymmetricKey, deepDecrypt, encrypt } from '~/assets/crypto';
+import { genSymmetricKey, deepEncrypt, unwrapSymmetricKey, deepDecrypt } from '~/assets/crypto';
 
 export const state = () => ([]);
 
@@ -24,7 +23,13 @@ export const mutations = {
     state[index].items.splice(itemIndex, 1, { ...item, completed });
   },
   setCategory (state, { index, itemIndex, category }) {
-    state[index].items[itemIndex].category = category;
+    const item = state[index].items[itemIndex];
+    state[index].items.splice(itemIndex, 1, {
+      ...item,
+      category: {
+        id: category.id
+      }
+    });
   },
   toggleEditable (state, { index, itemIndex }) {
     const item = state[index].items[itemIndex];
@@ -152,57 +157,16 @@ export const actions = {
     await commit('removeList', id);
   },
 
-  async setTitle ({ commit, state }, { id, title }) {
+  setTitle ({ commit, state }, { id, title }) {
     const index = state.findIndex(list => list.id === id);
     if (!title) {
       commit('setTitle', { index, title: 'Untitled' });
       return;
     }
     commit('setTitle', { index, title });
-
-    try {
-      const response = await this.$axios({
-        method: 'PATCH',
-        url: `/v1/todos/${id}`,
-        data: {
-          data: {
-            type: 'todo-list',
-            attributes: {
-              title: await encrypt(title, state[index].cryptoKey)
-            }
-          }
-        }
-      });
-      await this.$dexie.todos.update(id, { title, checksum: response.data.data.meta.checksum });
-    }
-    catch {
-      Dialog.alert({
-        title: 'Error',
-        message: 'An error has occured while trying to update this todo list\'s title.',
-        type: 'is-danger'
-      });
-    }
   },
 
   async addItem ({ state, commit, dispatch, rootState }, { id, item }) {
-    // Get the list's symmetric key
-    const index = state.findIndex(list => list.id === id);
-
-    // Post the encrypted item to the API
-    const encrypted = await deepEncrypt(item, state[index].cryptoKey);
-    await this.$axios({
-      method: 'POST',
-      url: `/v1/todos/${id}/items`,
-      data: {
-        data: {
-          type: 'todo-item',
-          attributes: {
-            ...encrypted
-          }
-        }
-      }
-    });
-
     // Update the local state
     const list = await this.$dexie.todos.get(id);
     list.items.push(item);
@@ -210,48 +174,27 @@ export const actions = {
     commit('addItem', { id, item: { ...item, editable: false } });
   },
 
+  async updateCategory ({ commit, state }, { index, itemIndex, category }) {
+    const id = state[index].id;
+    const list = await this.$dexie.todos.get(id);
+    list.items[itemIndex].category.id = category.id;
+    commit('setCategory', { index, itemIndex, category });
+    await this.$dexie.todos.update(id, list);
+  },
+
   async updateItem ({ commit, state }, { index, itemIndex, item }) {
     item.title = item.title.length ? item.title : 'Untitled';
     commit('updateItem', { index, itemIndex, item });
-
-    const encrypted = await deepEncrypt(item, state[index].cryptoKey);
     const id = state[index].id;
 
     const list = await this.$dexie.todos.get(id);
     list.items[itemIndex] = { ...list.items[itemIndex], ...item };
     await this.$dexie.todos.update(id, { items: list.items });
-
-    await this.$axios({
-      method: 'PATCH',
-      url: `/v1/todos/${state[index].id}/items/${itemIndex}`,
-      data: {
-        data: {
-          type: 'todo-item',
-          attributes: {
-            ...encrypted
-          }
-        }
-      }
-    });
   },
 
   async toggleCompletion ({ commit, state, rootState }, { id, itemIndex }) {
     const index = state.findIndex(list => list.id === id);
     const completed = !state[index].items[itemIndex].completed;
-    const encryptedCompleted = await deepEncrypt(completed, state[index].cryptoKey);
-
-    await this.$axios({
-      method: 'PATCH',
-      url: `/v1/todos/${id}/items/${itemIndex}`,
-      data: {
-        data: {
-          type: 'todo-item',
-          attributes: {
-            completed: encryptedCompleted
-          }
-        }
-      }
-    });
 
     const list = await this.$dexie.todos.get(id);
     list.items[itemIndex].completed = completed;
@@ -260,15 +203,55 @@ export const actions = {
     commit('setItemCompletion', { id, itemIndex, completed });
   },
   async removeItem ({ commit, dispatch }, { id, itemIndex }) {
-    await this.$axios({
-      method: 'DELETE',
-      url: `/v1/todos/${id}/items/${itemIndex}`
-    });
-
     const list = await this.$dexie.todos.get(id);
     list.items.splice(itemIndex, 1);
     await this.$dexie.todos.put(list);
 
     commit('removeItem', { id, itemIndex });
+  },
+  async syncWithAPI ({ state }, index) {
+    const id = state[index].id;
+    const todo = {
+      title: state[index].title,
+      items: [ ...state[index].items ].map((item) => {
+        return {
+          title: item.title,
+          description: item.description,
+          category: {
+            id: item.category.id
+          }
+        };
+      })
+    };
+
+    const encrypted = await deepEncrypt(todo, state[index].cryptoKey);
+    const response = await this.$axios({
+      method: 'PATCH',
+      url: `/v1/todos/${id}`,
+      data: {
+        data: {
+          type: 'todo-list',
+          attributes: {
+            title: encrypted.title
+          },
+          relationships: {
+            items: {
+              data: [ ...encrypted.items ].map((item) => {
+                return {
+                  type: 'todo-item',
+                  attributes: {
+                    ...item
+                  }
+                };
+              })
+            }
+          }
+        }
+      }
+    });
+
+    await this.$dexie.todos.update(id, {
+      checksum: response.data.data.meta.checksum
+    });
   }
 };

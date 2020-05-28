@@ -58,6 +58,6 @@ export default {
 @import '~/assets/css/slim-card.css';
 @import '~/assets/css/v-group.css';
 .error-message {
-  margin-top: 0.5rem;
+  margin-top: 0.25rem;
 }
 </style>

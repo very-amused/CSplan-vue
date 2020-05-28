@@ -22,7 +22,10 @@
           article(class="media-content")
             p(:id="`title-${index}-${id}`" @blur="preventEmpty($event)" class="has-text-weight-bold" type="is-text" :contenteditable="item.editable" placeholder="Untitled" @keydown.enter="toggleEditable(index)") {{ item.title }}
             p(:id="`description-${index}-${id}`" :contenteditable="item.editable" placeholder="Description...") {{ item.description }}
-            b-tag(v-if="categoryByID(item.category.id)" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
+            b-dropdown(v-if="item.editable" @active-change="updateCategory(index, $event)" @input="updateCategory($event, index)")
+              b-button(slot="trigger" class="color-picker-trigger") {{ categoryByID(item.category.id) && categoryByID(item.category.id).title || 'No Category' }}
+              b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
+            b-tag(v-if="!item.editable && categoryByID(item.category.id)" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
 
           //- Right content
           figure(class="media-right" :style="item.editable ? 'display: flex !important' : ''")
@@ -54,6 +57,7 @@
 </template>
 
 <script>
+import { mapActions } from 'vuex';
 import colors from '~/assets/defs/colors';
 import fgselect from '~/assets/js/fgselect';
 export default {
@@ -99,9 +103,17 @@ export default {
 
   async mounted () {
     await this.$store.dispatch('categories/getCategories');
+    window.addEventListener('keyup', async (evt) => {
+      if (evt.key === 's') {
+        await this.save(this.index);
+      }
+    });
   },
 
   methods: {
+    ...mapActions({
+      save: 'todos/syncWithAPI'
+    }),
     categoryByID (id) {
       const index = this.$store.state.categories.findIndex(category => category.id === id);
       if (!this.$store.state.categories[index]) {
@@ -193,6 +205,16 @@ export default {
       await this.$store.dispatch('todos/removeItem', {
         id: this.id,
         itemIndex: index
+      });
+    },
+    updateCategory (evt, index) {
+      if (!evt.id) {
+        return;
+      }
+      this.$store.dispatch('todos/updateCategory', {
+        index: this.index,
+        itemIndex: index,
+        category: evt
       });
     }
   }

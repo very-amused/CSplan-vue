@@ -21,7 +21,8 @@
           //- Item content
           article(class="media-content")
             p(:id="`title-${index}-${id}`" @blur="preventEmpty($event)" class="has-text-weight-bold" type="is-text" :contenteditable="item.editable" placeholder="Untitled" @keydown.enter="toggleEditable(index)") {{ item.title }}
-            p(:id="`description-${index}-${id}`" :contenteditable="item.editable" placeholder="Description...") {{ item.description }}
+            //- Description rendered by marked (show the raw description if it's editable)
+            p(:id="`description-${index}-${id}`" :contenteditable="item.editable" placeholder="Description..." v-html="item.editable ? item.description : marked(item.description)")
             b-dropdown(v-if="item.editable" @active-change="updateCategory(index, $event)" @input="updateCategory($event, index)")
               b-button(slot="trigger" class="color-picker-trigger") {{ categoryByID(item.category.id) && categoryByID(item.category.id).title || 'No Category' }}
               b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
@@ -44,19 +45,21 @@
         template(v-else)
           b-button(class="form-close" @click="showForm = false" type="is-text")
             b-icon(icon="close")
-          b-field
-            b-input(v-model="formInputs.title" placeholder="Title" required)
           b-field(grouped)
+            b-input(v-model="formInputs.title" placeholder="Title" expanded required)
             //- Category chooser
             b-dropdown(v-model="formInputs.category")
               b-button(slot="trigger" class="color-picker-trigger") {{ formInputs.category.title || 'No Category' }}
               b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
-            b-input(v-model="formInputs.description" placeholder="Description (optional)" expanded)
+          //- Buefy is bad at figuring out where the last field is
+          b-field(style="margin-bottom: 0")
+            b-input(type="textarea" v-model="formInputs.description" placeholder="Description (optional)" expanded maxlength=2000)
           b-button(@click="addItem" type="is-primary" native-type="submit" expanded)
             b-icon(icon="plus")
 </template>
 
 <script>
+import marked from 'marked';
 import { mapActions } from 'vuex';
 import colors from '~/assets/defs/colors';
 import fgselect from '~/assets/js/fgselect';
@@ -84,7 +87,8 @@ export default {
         description: '',
         category: {
           id: null
-        }
+        },
+        markdownPreview: false
       }
     };
   },
@@ -111,6 +115,9 @@ export default {
   },
 
   methods: {
+    marked (text) {
+      return marked(text);
+    },
     ...mapActions({
       save: 'todos/syncWithAPI'
     }),

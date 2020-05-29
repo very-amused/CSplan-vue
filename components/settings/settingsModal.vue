@@ -45,7 +45,7 @@ b-modal(:active="active" @close="close")
         article(class="media-left")
           b-icon(icon="lock")
         div(class="media-content")
-          b-button(@click="exportPublicKey" rounded) Export Master Keypair
+          b-button(@click="exportPublicKey" rounded disabled) Export Master Keypair
           b-field(v-if="forms.keys.exported.publicKey" label="Public Key")
             pre {{ forms.keys.exported.publicKey }}
           div(v-if="forms.keys.showWarning")

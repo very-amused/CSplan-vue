@@ -31,7 +31,7 @@ div(class="card" :id="`list-${this.id}`")
         b-tag(v-if="!item.editable && categoryByID(item.category.id)" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
 
       //- Right content
-      figure(class="media-right" v-show="!keyboardMode")
+      figure(class="media-right" v-show="!keyboardMode" :style="(item.editable && !keyboardMode) ? 'display: flex !important' : ''")
         b-button(@click="toggleEditable(index)" rounded type="is-text" :style="(item.editable && categoryByID(item.category.id)) ? `background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}` : ''")
           b-icon(icon="pencil" size="is-small")
         b-button(@click="removeItem(index)" rounded type="is-text")
@@ -62,6 +62,7 @@ div(class="card" :id="`list-${this.id}`")
 
 <script>
 import marked from 'marked';
+import dpurify from 'dompurify';
 import { mapActions } from 'vuex';
 import colors from '~/assets/defs/colors';
 import fgselect from '~/assets/js/fgselect';
@@ -175,10 +176,10 @@ export default {
       }
     },
     marked (text) {
-      return marked(text);
+      return dpurify.sanitize(marked(text));
     },
     breaked (text) {
-      return text.replace(/\n/g, '<br>');
+      return dpurify.sanitize(text.replace(/\n/g, '<br>'));
     },
     ...mapActions({
       save: 'todos/syncWithAPI'
@@ -323,6 +324,7 @@ export default {
 <style lang="scss" scoped>
 $button-width: 34px;
 $field-margin: 0.75rem;
+$magical-width: 72rem;
 
 .card {
   display: flex;
@@ -357,14 +359,6 @@ hr {
 .item-form {
   padding: 0.75rem;
 }
-.color-indicator {
-  padding: 1.5px;
-  margin: 0.25rem 0;
-}
-.color-picker-trigger {
-  margin-right: $field-margin;
-  margin-left: $field-margin
-}
 .dropdown-content {
   padding: 0;
 }
@@ -377,6 +371,11 @@ hr {
 }
 .markdown {
   margin-bottom: 0.25rem !important;
+}
+// Prevent titles or descriptions of items from overflowing the list
+header, p {
+  max-width: $magical-width;
+  overflow-wrap: break-word;
 }
 .markdown-editor {
   background-color: whitesmoke;

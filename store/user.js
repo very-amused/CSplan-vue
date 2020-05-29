@@ -14,6 +14,7 @@ const initialState = () => {
       publicKey: null,
       privateKey: null
     },
+    email: '',
     name: {
       firstName: '',
       lastName: '',
@@ -46,6 +47,9 @@ export const mutations = {
   setID (state, id) {
     state.id = id;
   },
+  setEmail (state, email) {
+    state.email = email;
+  },
   setKeys (state, keys) {
     state.keys = { ...keys };
   },
@@ -63,6 +67,7 @@ export const actions = {
     if (user) {
       commit('setLoggedIn', true);
       commit('setID', user.id);
+      commit('setEmail', user.email);
       await dispatch('updateLoggedInState'); // Verify the user's authentication token
       commit('setKeys', user.keys);
       await dispatch('updateName');
@@ -85,6 +90,7 @@ export const actions = {
     const id = response.data.data.id;
     await this.$dexie.user.put({ id });
     await commit('setID', id);
+    commit('setEmail', body.email);
   },
 
   /**
@@ -108,13 +114,14 @@ export const actions = {
 
     const id = data.data.relationships.user.data.id;
     const keydata = data.data.relationships.keys.data.attributes;
-    await this.$dexie.user.put({ id });
+    await this.$dexie.user.put({ id, email: body.email });
     const keys = await unwrapMasterKeypair(body.password, keydata);
     await this.$dexie.user.update(id, {
       keys: keys.usable
     });
     commit('setKeys', keys.usable);
     commit('setID', id);
+    commit('setEmail', body.email);
     await commit('setLoggedIn', true);
   },
 

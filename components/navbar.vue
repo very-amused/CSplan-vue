@@ -6,6 +6,7 @@
     client-only(slot="end")
       template(v-if="isLoggedIn")
         b-navbar-dropdown(right :label="displayName" collapsible)
+          b-navbar-item(@click="showSettingsModal") Settings
           b-navbar-item(@click="logout") Sign Out
       template(v-else)
         b-navbar-item(tag="div" class="buttons")
@@ -50,6 +51,9 @@ export default {
   },
 
   methods: {
+    showSettingsModal () {
+      this.$emit('show-settings');
+    },
     async logout () {
       // Log the user out in the state
       await this.$store.dispatch('user/logout');

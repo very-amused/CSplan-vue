@@ -107,10 +107,10 @@ export const actions = {
     }
   },
 
-  async addList ({ commit, dispatch, rootState }) {
+  async addList ({ commit, dispatch, rootState }, { title, items }) {
     let list = {
-      title: 'Untitled',
-      items: []
+      title,
+      items
     };
 
     const { usable, exported } = await genSymmetricKey(rootState.user.keys.publicKey);
@@ -157,12 +157,13 @@ export const actions = {
     await commit('removeList', id);
   },
 
-  setTitle ({ commit, state }, { id, title }) {
+  async setTitle ({ commit, state }, { id, title }) {
     const index = state.findIndex(list => list.id === id);
     if (!title) {
       commit('setTitle', { index, title: 'Untitled' });
       return;
     }
+    await this.$dexie.todos.update(id, { title });
     commit('setTitle', { index, title });
   },
 

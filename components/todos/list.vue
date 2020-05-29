@@ -1,61 +1,62 @@
 <template lang="pug">
-    div(class="card")
-      div(class="content-custom")
+div(class="card")
+  div(class="content-custom")
 
-        //- Delete button
-        b-button(@click="openDeleteDialog" type="is-text" size="is-small" class="close-button")
-          b-icon(icon="close" class="delete-icon")
+    //- Delete button
+    div(class="corner-icons")
+      b-button(@click="openDeleteDialog" type="is-text" size="is-small")
+        b-icon(icon="close")
 
-        header(class="title is-3" contenteditable @blur="preventEmpty($event); setTitle($event)") {{ list.title }}
-        hr
-        div(v-for="(item, index) in list.items" :key="item.id" class="media")
+    header(class="title is-3" contenteditable @blur="preventEmpty($event); setTitle($event)") {{ list.title }}
+    hr
+    div(v-for="(item, index) in list.items" :key="item.id" class="media")
 
-          //- Left content
-          figure(class="media-left")
-            template(v-if="item.completed")
-              b-button(@click="toggleCompletion(index)" rounded type="is-text" :style="`background-color: ${categoryByID(item.category.id) ? categoryByID(item.category.id).color.hex : '#FFFFFF'}; color: ${categoryByID(item.category.id) ? getForegroundColor(categoryByID(item.category.id).color.hex) : '#000000'}`")
-                b-icon(icon="check")
-            template(v-else)
-              b-button(@click="toggleCompletion(index)" rounded type="is-grey" outlined)
-
-          //- Item content
-          article(class="media-content")
-            p(:id="`title-${index}-${id}`" @blur="preventEmpty($event)" class="has-text-weight-bold" type="is-text" :contenteditable="item.editable" placeholder="Untitled" @keydown.enter="toggleEditable(index)") {{ item.title }}
-            //- Description rendered by marked (show the raw description if it's editable)
-            p(:id="`description-${index}-${id}`" :contenteditable="item.editable" placeholder="Description..." v-html="item.editable ? item.description : marked(item.description)")
-            b-dropdown(v-if="item.editable" @active-change="updateCategory(index, $event)" @input="updateCategory($event, index)")
-              b-button(slot="trigger" class="color-picker-trigger") {{ categoryByID(item.category.id) && categoryByID(item.category.id).title || 'No Category' }}
-              b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
-            b-tag(v-if="!item.editable && categoryByID(item.category.id)" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
-
-          //- Right content
-          figure(class="media-right" :style="item.editable ? 'display: flex !important' : ''")
-            b-button(@click="toggleEditable(index)" rounded type="is-text" :style="(item.editable && categoryByID(item.category.id)) ? `background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}` : ''")
-              b-icon(icon="pencil" size="is-small")
-            b-button(@click="removeItem(index)" rounded type="is-text")
-              b-icon(icon="close" size="is-small")
-
-      hr(v-if="list.items.length > 0" style="margin-bottom: 0")
-      form(action="" onsubmit="return false" class="item-form")
-        template(v-if="!showForm")
-          b-button(@click="showForm = true" type="is-grey" outlined expanded)
-            b-icon(icon="plus")
-
-        //- Form to add an item
+      //- Left content
+      figure(class="media-left")
+        template(v-if="item.completed")
+          b-button(@click="toggleCompletion(index)" rounded type="is-text" :style="`background-color: ${categoryByID(item.category.id) ? categoryByID(item.category.id).color.hex : '#FFFFFF'}; color: ${categoryByID(item.category.id) ? getForegroundColor(categoryByID(item.category.id).color.hex) : '#000000'}`")
+            b-icon(icon="check")
         template(v-else)
-          b-button(class="form-close" @click="showForm = false" type="is-text")
-            b-icon(icon="close")
-          b-field(grouped)
-            b-input(v-model="formInputs.title" placeholder="Title" expanded required)
-            //- Category chooser
-            b-dropdown(v-model="formInputs.category")
-              b-button(slot="trigger" class="color-picker-trigger") {{ formInputs.category.title || 'No Category' }}
-              b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
-          //- Buefy is bad at figuring out where the last field is
-          b-field(style="margin-bottom: 0")
-            b-input(type="textarea" v-model="formInputs.description" placeholder="Description (optional)" expanded maxlength=2000)
-          b-button(@click="addItem" type="is-primary" native-type="submit" expanded)
-            b-icon(icon="plus")
+          b-button(@click="toggleCompletion(index)" rounded type="is-grey" outlined)
+
+      //- Item content
+      article(class="media-content")
+        p(:id="`title-${index}-${id}`" @blur="preventEmpty($event)" class="has-text-weight-bold" type="is-text" :contenteditable="item.editable" placeholder="Untitled" @keydown.enter="toggleEditable(index)") {{ item.title }}
+        //- Description rendered by marked (show the raw description if it's editable)
+        p(class="content markdown" :id="`description-${index}-${id}`" :contenteditable="item.editable" placeholder="Description... (you can use markdown here)" :class="{'markdown-editor': item.editable}" v-html="item.editable ? breaked(item.description) : marked(item.description)")
+        b-dropdown(v-if="item.editable" @active-change="updateCategory(index, $event)" @input="updateCategory($event, index)")
+          b-button(slot="trigger" class="color-picker-trigger") {{ categoryByID(item.category.id) && categoryByID(item.category.id).title || 'No Category' }}
+          b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
+        b-tag(v-if="!item.editable && categoryByID(item.category.id)" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
+
+      //- Right content
+      figure(class="media-right" :style="item.editable ? 'display: flex !important' : ''")
+        b-button(@click="toggleEditable(index)" rounded type="is-text" :style="(item.editable && categoryByID(item.category.id)) ? `background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}` : ''")
+          b-icon(icon="pencil" size="is-small")
+        b-button(@click="removeItem(index)" rounded type="is-text")
+          b-icon(icon="close" size="is-small")
+
+  hr(v-if="list.items.length > 0" style="margin-bottom: 0")
+  form(action="" onsubmit="return false" class="item-form")
+    template(v-if="!showForm")
+      b-button(@click="showForm = true" type="is-grey" outlined expanded)
+        b-icon(icon="plus")
+
+    //- Form to add an item
+    template(v-else)
+      b-button(class="form-close" @click="showForm = false" type="is-text")
+        b-icon(icon="close")
+      b-field(grouped)
+        b-input(v-model="formInputs.title" placeholder="Title" expanded required)
+        //- Category chooser
+        b-dropdown(v-model="formInputs.category")
+          b-button(slot="trigger" class="color-picker-trigger") {{ formInputs.category.title || 'No Category' }}
+          b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
+      //- Buefy is bad at figuring out where the last field is
+      b-field(style="margin-bottom: 0")
+        b-input(type="textarea" v-model="formInputs.description" placeholder="Description (optional)" expanded maxlength=2000)
+      b-button(@click="addItem" type="is-primary" native-type="submit" expanded)
+        b-icon(icon="plus")
 </template>
 
 <script>
@@ -81,6 +82,7 @@ export default {
 
   data () {
     return {
+      saveInterval: null,
       showForm: false,
       formInputs: {
         title: '',
@@ -107,16 +109,37 @@ export default {
 
   async mounted () {
     await this.$store.dispatch('categories/getCategories');
-    window.addEventListener('keyup', async (evt) => {
-      if (evt.key === 's') {
-        await this.save(this.index);
-      }
-    });
+    window.addEventListener('keyup', this.handleKeyup);
+    // Automatically save every 5s
+    this.saveInterval = setInterval(await this.save(this.index), 5000);
+  },
+
+  // Clean up everything we did upon mounted before destroying the component
+  beforeDestroy () {
+    window.removeEventListener('keyup', this.handleKeyup);
+    clearInterval(this.saveInterval);
   },
 
   methods: {
+    async handleKeyup (evt) {
+      // Don't handle keyboard shortcut if an editable element is focused
+      const editables = document.querySelectorAll('input, textarea, [contenteditable="true"]');
+      for (const el of editables) {
+        if (el.contains(document.activeElement)) {
+          return;
+        };
+      }
+
+      // Keyboard shortcuts
+      if (evt.key === 's') {
+        await this.save(this.index);
+      }
+    },
     marked (text) {
       return marked(text);
+    },
+    breaked (text) {
+      return text.replace(/\n/g, '<br>');
     },
     ...mapActions({
       save: 'todos/syncWithAPI'
@@ -197,7 +220,8 @@ export default {
     },
     async updateItem (index) {
       const title = document.querySelector(`#title-${index}-${this.id}`).textContent || 'Untitled';
-      const description = document.querySelector(`#description-${index}-${this.id}`).textContent;
+      // eslint-disable-next-line
+      const description = document.querySelector(`#description-${index}-${this.id}`).innerText;
 
       await this.$store.dispatch('todos/updateItem', {
         index: this.index,
@@ -242,6 +266,10 @@ export default {
   display: block;
   color: #4A4A4A66
 }
+.markdown * {
+  margin-bottom: 0 !important;
+  margin-top: 0 !important;
+}
 </style>
 
 <style lang="scss" scoped>
@@ -254,6 +282,9 @@ $field-margin: 0.75rem;
   margin-bottom: 0 !important;
 }
 .title {
+  margin-bottom: 0 !important;
+}
+.chinless {
   margin-bottom: 0 !important;
 }
 .content-custom {
@@ -296,11 +327,15 @@ hr {
 .button.form-close {
   margin-bottom: $field-margin;
 }
-p {
-  word-break: break-all;
+.markdown {
+  margin-bottom: 0.25rem !important;
+}
+.markdown-editor {
+  background-color: whitesmoke;
+  padding: 0.75rem;
 }
 
-.close-button {
+.corner-icons {
   position: absolute;
   top: $field-margin/2;
   right: $field-margin/2;

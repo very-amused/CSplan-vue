@@ -2,7 +2,7 @@
 client-only
   b-tabs(v-model="tabIndex" type="is-toggle")
     b-tab-item(v-for="(list, index) in lists" :key="list.id" :label="list.title")
-      list(:id="list.id" :index="list.index")
+      list(:id="list.id" :index="index")
 </template>
 
 <script>
@@ -27,7 +27,7 @@ export default {
 
   computed: {
     lists () {
-      return this.$store.state.todos;
+      return this.$store.state.todos || [];
     }
   },
 

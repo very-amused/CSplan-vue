@@ -9,7 +9,7 @@ div(class="card" :style="`background-color: ${category.color.hex}`")
             color-picker(:value="category.color" @input="updateColor($event)" :presetColors="colorsArray" disable-alpha)
       b-button(@click="deleteThis" type="is-text invisible-button")
         b-icon(icon="close" :style="`color: ${getForegroundColor(category.color.hex)}`")
-    h1(class="title" :style="`color: ${getForegroundColor(category.color.hex)}`" :contenteditable="editable" @blur="updateTitle($event)" @keydown.enter="removeFocus") {{ category.title }}
+    h1(class="title" :id="`category-title-${category.id}`" :style="`color: ${getForegroundColor(category.color.hex)}`" contenteditable @blur="updateTitle($event)" @keydown.enter="removeFocus") {{ category.title }}
 </template>
 
 <script>
@@ -32,8 +32,7 @@ export default {
 
   data () {
     return {
-      showIcons: false,
-      editable: true
+      showIcons: false
     };
   },
 
@@ -63,11 +62,8 @@ export default {
 
       return luminance < 0.5 ? '#FFFFFF' : '#363636';
     },
-    removeFocus () {
-      this.editable = false;
-      setTimeout(() => {
-        this.editable = true;
-      }, 0);
+    removeFocus (id) {
+      document.querySelector(`#category-title-${this.category.id}`).blur();
     },
     updateTitle (evt) {
       // Disallow empty titles

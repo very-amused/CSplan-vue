@@ -8,36 +8,35 @@
           b-dropdown(ref="dropdown" @active-change="showItemForm = $event")
             b-button(rounded size="is-small" style="margin-left: 0.5rem;" slot="trigger")
               b-icon(:icon="showItemForm ? 'chevron-up' : 'plus'")
+
+            //- Form to add items
             b-dropdown-item(custom id="itemForm")
               form(action="" onsubmit="return false")
                 b-field(grouped custom-class="hide")
-                  b-dropdown
-                    b-button(slot="trigger" class="color-picker-trigger" rounded :style="`background-color: ${itemFields.color.hex}`")
-                    b-dropdown-item(custom paddingless)
-                      color-picker(v-model="itemFields.color" :presetColors="colorsArray" disable-alpha)
                   b-input(v-model="itemFields.title" id="itemFieldTitle" placeholder="Title" expanded)
+                  b-dropdown(v-model="itemFields.category")
+                    b-button(slot="trigger" :style="`background-color: ${categoryByID(itemFields.category.id)? categoryByID(itemFields.category.id).color.hex : '#FFFFFF'}`") {{ itemFields.category.title || 'No Category' }}
+                    b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
+                b-field(style="margin-bottom: 0")
+                  b-input(v-model="itemFields.description" type="textarea" maxlength=2000 placeholder="Description (optional)")
                 b-field
-                  b-input(v-model="itemFields.description" type="textarea" placeholder="Description (optional)")
-                b-field
-                  b-button(@click="addItem" native-type="submit")
+                  b-button(@click="addItem" expanded native-type="submit")
                     b-icon(icon="plus")
+
+        //- List of items
         div(class="column")
-          b-taglist(v-for="(item, index) in items" :key="index" attached class="item-tags")
+          b-taglist(v-for="(item, index) in items" :key="index" class="item-tags")
             b-tag(size="is-medium" :title="item.title") {{ item.title }}
-            b-tag(size="is-medium" :style="`background-color: ${item.color}`")
+            b-tag(v-if="item.category.id" size="is-small" :style="`background-color: ${categoryByID(item.category.id).color.hex}`") {{ categoryByID(item.category.id).title }}
+
+        //- Submit button
         div(id="submitButtonContainer")
           b-button(@click="addList" native-type="submit" type="is-success" rounded id="submitButton")
             b-icon(icon="plus")
 </template>
 
 <script>
-import { Sketch } from 'vue-color';
-import colors from '~/assets/defs/colors';
 export default {
-  components: {
-    colorPicker: Sketch
-  },
-
   data () {
     return {
       showItemForm: false,
@@ -48,16 +47,16 @@ export default {
       itemFields: {
         title: '',
         description: '',
-        color: {
-          hex: '#002cff'
+        category: {
+          id: null
         }
       }
     };
   },
 
   computed: {
-    colorsArray () {
-      return Object.values(colors);
+    categories () {
+      return this.$store.state.categories;
     }
   },
 
@@ -74,7 +73,6 @@ export default {
 
       this.items.push({
         ...this.itemFields,
-        color: this.itemFields.color.hex,
         completed: false
       });
       // Clear each field except for the color picker
@@ -98,6 +96,13 @@ export default {
           });
         });
       this.$parent.close();
+    },
+    categoryByID (id) {
+      const index = this.$store.state.categories.findIndex(category => category.id === id);
+      if (!this.$store.state.categories[index]) {
+        return null;
+      }
+      return this.$store.state.categories[index];
     }
   }
 };

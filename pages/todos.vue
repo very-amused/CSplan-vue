@@ -7,8 +7,10 @@ div
         p(class="subtitle") Simple, color coded, fully zero access encrypted. What do you want to do today?
   section(class="container" v-else)
     tabs
-  b-button(@click="addList" class="add-list-button" type="is-link" size="is-large" rounded)
+  b-button(@click="addList" class="add-list-button" type="is-link" rounded)
     b-icon(icon="plus")
+  b-modal(:active.sync="showListForm")
+    addListForm
 </template>
 
 <script>
@@ -43,8 +45,8 @@ export default {
   },
 
   methods: {
-    async addList () {
-      await this.$store.dispatch('todos/addList');
+    addList () {
+      this.showListForm = true;
     }
   }
 };
@@ -55,8 +57,8 @@ export default {
   position: fixed;
   bottom: 4rem;
   right: 4rem;
-  width: 5rem;
-  height: 5rem;
+  width: 4rem;
+  height: 4rem;
 }
 </style>
 

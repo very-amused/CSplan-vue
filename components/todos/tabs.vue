@@ -2,7 +2,7 @@
 client-only
   b-tabs(v-model="tabIndex" type="is-toggle")
     b-tab-item(v-for="(list, index) in lists" :key="list.id" :label="list.title")
-      list(:id="list.id" :index="index")
+      list(:id="list.id" :index="index" :active="tabIndex === index")
 </template>
 
 <script>

@@ -7,7 +7,7 @@ b-modal(:active="active" @close="close")
       //- Username form
       div(class="media")
         article(class="media-left")
-          b-button(type="is-text")
+          b-button(@click="forms.name.state = 'editable'" type="is-text")
             b-icon(icon="account-circle" size="is-large")
         div(class="media-content")
           form(v-if="forms.name.state !== 'static'" onsubmit="return false")
@@ -18,8 +18,7 @@ b-modal(:active="active" @close="close")
               b-input(v-model="forms.name.fields.lastName" expanded placeholder="Last Name (optional)")
             b-button(@click="updateName" type="is-success" native-type="submit" expanded :loading="forms.name.state === 'loading'") Submit
           p(v-else class="is-size-5") {{ displayName }}
-            b-button(@click="forms.name.state = 'editable'" type="is-text" size="is-small")
-              b-icon(icon="pencil" size="is-small")
+
       //- Email form
       div(class="media")
         article(class="media-left")
@@ -32,6 +31,14 @@ b-modal(:active="active" @close="close")
           p(v-else class="is-size-5") {{ email }}
             b-button(@click="forms.email.state = 'editable'" type="is-text" size="is-small" disabled)
               b-icon(icon="pencil" size="is-small")
+
+      //- Navigation settings
+      div(class="media")
+        article(class="media-left")
+          b-button(@click="toggleKeyboardMode"  size="is-medium" type="is-text")
+            b-icon(icon="keyboard" size="is-medium" :type="keyboardMode ? 'is-primary' : ''")
+        div(class="media-content")
+          p Keyboard Mode removes most clickable navigation buttons and adds additional highlighting to certain elements, with the goal of making CSplan more navigatable by keyboard alone.
 
       //- Key export form
       div(class="media")
@@ -52,7 +59,7 @@ b-modal(:active="active" @close="close")
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 export default {
   props: {
     active: {
@@ -68,7 +75,7 @@ export default {
       forms: {
         name: {
           state: 'static',
-          inputs: {
+          fields: {
             firstName: '',
             lastName: '',
             username: ''
@@ -97,6 +104,9 @@ export default {
     }),
     email () {
       return this.$store.state.user.email;
+    },
+    keyboardMode () {
+      return this.$store.state.settings.keyboardMode;
     }
   },
 
@@ -111,6 +121,9 @@ export default {
       });
       this.forms.name.state = 'static';
     },
+    ...mapActions({
+      toggleKeyboardMode: 'settings/toggleKeyboardMode'
+    }),
     exportPublicKey () {
       this.forms.keys.exported.publicKey = 'Sorry, this functionality is not available yet';
       this.forms.keys.showWarning = true;

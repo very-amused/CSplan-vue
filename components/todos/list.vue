@@ -1,15 +1,15 @@
 <template lang="pug">
-div(class="card")
+div(class="card" :id="`list-${this.id}`")
   div(class="content-custom")
 
     //- Delete button
-    div(class="corner-icons")
+    div(class="corner-icons" v-show="!keyboardMode")
       b-button(@click="openDeleteDialog" type="is-text" size="is-small")
         b-icon(icon="close")
 
-    header(class="title is-3" contenteditable @blur="preventEmpty($event); setTitle($event)") {{ list.title }}
+    header(:id="`title-${id}`" @keydown.enter="unfocus(`title-${id}`)" class="title is-3" contenteditable @blur="preventEmpty($event); setTitle($event)") {{ list.title }}
     hr
-    div(v-for="(item, index) in list.items" :key="item.id" class="media")
+    div(v-for="(item, index) in list.items" :key="index" class="media" @mouseover="select(index)")
 
       //- Left content
       figure(class="media-left")
@@ -21,30 +21,31 @@ div(class="card")
 
       //- Item content
       article(class="media-content")
-        p(:id="`title-${index}-${id}`" @blur="preventEmpty($event)" class="has-text-weight-bold" type="is-text" :contenteditable="item.editable" placeholder="Untitled" @keydown.enter="toggleEditable(index)") {{ item.title }}
+        p(:id="`title-${index}-${id}`" @blur="preventEmpty($event)" class="has-text-weight-bold" :style="(keyboardMode && index === selected) ? 'text-decoration: underline' : ''" :contenteditable="item.editable" placeholder="Untitled" @keydown.enter="toggleEditable(index)") {{ item.title }}
         //- Description rendered by marked (show the raw description if it's editable)
         p(class="content markdown" :id="`description-${index}-${id}`" :contenteditable="item.editable" placeholder="Description... (you can use markdown here)" :class="{'markdown-editor': item.editable}" v-html="item.editable ? breaked(item.description) : marked(item.description)")
+        //- Category chooser
         b-dropdown(v-if="item.editable" @active-change="updateCategory(index, $event)" @input="updateCategory($event, index)")
-          b-button(slot="trigger" class="color-picker-trigger") {{ categoryByID(item.category.id) && categoryByID(item.category.id).title || 'No Category' }}
+          b-button(slot="trigger" class="color-picker-trigger" :style="categoryByID(item.category.id) ? `background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(item.category.id)}` : ''") {{ categoryByID(item.category.id) && categoryByID(item.category.id).title || 'No Category' }}
           b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
         b-tag(v-if="!item.editable && categoryByID(item.category.id)" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
 
       //- Right content
-      figure(class="media-right" :style="item.editable ? 'display: flex !important' : ''")
+      figure(class="media-right" v-show="!keyboardMode")
         b-button(@click="toggleEditable(index)" rounded type="is-text" :style="(item.editable && categoryByID(item.category.id)) ? `background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}` : ''")
           b-icon(icon="pencil" size="is-small")
         b-button(@click="removeItem(index)" rounded type="is-text")
           b-icon(icon="close" size="is-small")
 
-  hr(v-if="list.items.length > 0" style="margin-bottom: 0")
+  hr(v-if="list.items.length > 0 && !keyboardMode" style="margin-bottom: 0")
   form(action="" onsubmit="return false" class="item-form")
     template(v-if="!showForm")
-      b-button(@click="showForm = true" type="is-grey" outlined expanded)
+      b-button(v-show="!keyboardMode" @click="showForm = true" type="is-grey" outlined expanded)
         b-icon(icon="plus")
 
     //- Form to add an item
-    template(v-else)
-      b-button(class="form-close" @click="showForm = false" type="is-text")
+    form(v-else onsubmit="return false")
+      b-button(v-show="!keyboardMode" class="form-close" @click="showForm = false" type="is-text")
         b-icon(icon="close")
       b-field(grouped)
         b-input(v-model="formInputs.title" placeholder="Title" expanded required)
@@ -77,6 +78,12 @@ export default {
       default () {
         return '';
       }
+    },
+    active: {
+      type: Boolean,
+      default () {
+        return false;
+      }
     }
   },
 
@@ -89,9 +96,9 @@ export default {
         description: '',
         category: {
           id: null
-        },
-        markdownPreview: false
-      }
+        }
+      },
+      selected: 0
     };
   },
 
@@ -104,6 +111,9 @@ export default {
     },
     categories () {
       return this.$store.state.categories;
+    },
+    keyboardMode () {
+      return this.$store.state.settings.keyboardMode;
     }
   },
 
@@ -122,6 +132,9 @@ export default {
 
   methods: {
     async handleKeyup (evt) {
+      if (!this.active) {
+        return;
+      }
       // Don't handle keyboard shortcut if an editable element is focused
       const editables = document.querySelectorAll('input, textarea, [contenteditable="true"]');
       for (const el of editables) {
@@ -131,8 +144,34 @@ export default {
       }
 
       // Keyboard shortcuts
-      if (evt.key === 's') {
-        await this.save(this.index);
+      switch (evt.key) {
+        case 's': // Save to API
+          await this.save(this.index);
+          break;
+        case 'D': // Delete the entire list
+          this.openDeleteDialog();
+          break;
+        case 'T': // Edit the list's title
+          document.querySelector(`#title-${this.id}`).focus();
+          break;
+        case 'd': // Delete the selected item
+          this.removeItem(this.selected);
+          break;
+        case 'e': // Edit the selected item
+          this.toggleEditable(this.selected);
+          break;
+        case 'c': // Toggle the selected item
+          this.toggleCompletion(this.selected);
+          break;
+        case 'ArrowUp': // Move the selected item up
+          this.select(this.selected - 1);
+          break;
+        case 'ArrowDown': // Move the selected item down
+          this.select(this.selected + 1);
+          break;
+        case 'n': // New item
+          this.showForm = true;
+          break;
       }
     },
     marked (text) {
@@ -247,6 +286,15 @@ export default {
         itemIndex: index,
         category: evt
       });
+    },
+    select (index) {
+      if (!this.list.items[index]) {
+        return;
+      }
+      this.selected = index;
+    },
+    unfocus (id) {
+      document.querySelector(`#${id}`).blur();
     }
   }
 };

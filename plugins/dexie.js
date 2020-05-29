@@ -5,7 +5,8 @@ const db = new Dexie('CSplan');
 db.version(1).stores({
   todos: 'id, title',
   categories: 'id, title',
-  user: 'id'
+  user: 'id',
+  settings: 'id'
 });
 
 export default ({ app }, inject) => {

@@ -64,7 +64,6 @@ export const mutations = {
 export const actions = {
   async init ({ commit, dispatch }) {
     const user = await this.$dexie.user.toCollection().first();
-    console.log(user);
     if (user) {
       this.$axios.defaults.headers.common['CSRF-TOKEN'] = user.CSRFtoken;
       commit('setLoggedIn', true);
@@ -74,6 +73,7 @@ export const actions = {
       commit('setKeys', user.keys);
       await dispatch('updateName');
     }
+    dispatch('settings/init', null, { root: true });
   },
 
   async register ({ commit, dispatch }, body) {
@@ -117,6 +117,7 @@ export const actions = {
     const id = data.data.relationships.user.data.id;
     const keydata = data.data.relationships.keys.data.attributes;
     await this.$dexie.user.put({ id, email: body.email });
+    await this.$dexie.settings.put({ id });
     const keys = await unwrapMasterKeypair(body.password, keydata);
     await this.$dexie.user.update(id, {
       keys: keys.usable,

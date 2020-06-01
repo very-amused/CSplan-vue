@@ -4,7 +4,7 @@ const initialState = () => {
   };
 };
 
-export const state = initialState();
+export const state = initialState;
 
 export const mutations = {
   setKeyboardMode (state, bool) {

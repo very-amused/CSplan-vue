@@ -1,0 +1,18 @@
+[
+  {
+    "title": "Take Back Your Time",
+    "description": "CSplan was created by procrastinators, for procrastinators. Time is an incredibly valuable gift, but the human mind is far from perfect when it comes to managing it. CSplan aims to help you close that gap and take back your time, by empowering you to organize and manage your life."
+  },
+  {
+    "title": "Work How You Want",
+    "description": "CSplan is highly flexible with how you want to organize your life. Support for custom categories with color-coding and rich MarkDown is already included. Interval based reminders for specific items or entire todo lists are coming very soon. CSplan allows its users the freedom to choose between its default interface, and a more minimalist, keyboard-driven experience. Nearly every action in CSplan is mapped to a keyboard shortcut. Future support for alternative clients on Discord and Slack is planned."
+  },
+  {
+    "title": "Secure & Fast",
+    "description": "All data on CSplan, everything from your username to your daily todos, are stored with zero access AES-GCM 128-bit encryption, with your password used as the key. This means that nobody can read your plans without your password, even while they're stored serverside.\n * Passwords are stored using ultra-secure bcrypt hashing, and all servers are maintained regularly with airtight firewalls and safeguards in order to prevent data leakage.\n * CSplan's commitment to security and encryption stems from the belief that privacy is an essential right, and should be enforced by design, not by promise."
+  },
+  {
+    "title": "Open Source",
+    "description": "Security should be a function, not a promise. You never have to take our word for any of CSplan's features, how they work, or what they could be maliciously doing behind the scenes. All of CSplan's production code is open sourced on GitHub, and CSplan's active development is also public on a separate branch, so you can follow what new features are coming soon."
+  }
+]

@@ -21,3 +21,9 @@ export default {
   }
 };
 </script>
+
+<style>
+html {
+  background-image: url("/img/chevron.png");
+}
+</style>

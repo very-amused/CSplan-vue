@@ -16,7 +16,7 @@ div(class="main" @mousewheel.prevent="onScroll($event)" :style="`--navbar-height
         header(class="title card-header-title") {{ slides[activeSlide].title }}
       div(class="card-content")
         div(v-html="marked(slides[activeSlide].description)" class="content")
-    b-button(v-if="!isLoggedIn" type="is-primary" class="action-prompt" tag="nuxt-link" to="/account/register") Create an Account
+    b-button(v-if="!isLoggedIn" rounded type="is-primary" class="action-prompt" tag="nuxt-link" to="/account/register") Create an Account
 
   footer(class="footer" v-if="showOutline")
     b-button(@click="showOutline = false" icon-left="arrow-left" type="is-text")
@@ -117,7 +117,7 @@ export default {
 }
 .action-prompt {
   position: absolute;
-  bottom: 10rem;
+  bottom: 12.5rem;
 }
 .slides {
   position: absolute;

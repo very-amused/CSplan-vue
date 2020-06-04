@@ -1,5 +1,8 @@
 <template ref="navbar" lang="pug">
   b-navbar(type="is-dark")
+    template(slot="brand")
+      b-navbar-item(tag="nuxt-link" to="/")
+        img(src="/img/logo/default-monochrome-white.svg" alt="CSplan: Take Back Your Time" width="100")
     template(slot="start")
       nuxt-link(v-for="page in pages" :key="page.title" :to="page.href" v-slot="{ isActive, href }")
         b-navbar-item(v-if="page.account ? isLoggedIn : true" tag="nuxt-link" :to="href" :active="isActive && href !== '/'") {{ page.title }}
@@ -19,10 +22,6 @@ export default {
   data () {
     return {
       pages: [
-        {
-          title: 'Home',
-          href: '/'
-        },
         {
           title: 'Todos',
           href: '/todos',

@@ -6,6 +6,7 @@ div(class="container")
 </template>
 
 <script>
+import { mapState } from 'vuex';
 import category from '~/components/categories/category';
 export default {
   components: {
@@ -13,13 +14,19 @@ export default {
   },
 
   computed: {
-    categories () {
-      return this.$store.state.categories;
-    }
+    ...mapState({
+      categories: state => state.categories,
+      isLoggedIn: state => state.user.isLoggedIn
+    })
   },
 
   async mounted () {
-    await this.$store.dispatch('categories/getCategories');
+    if (this.isLoggedIn) {
+      await this.$store.dispatch('categories/getCategories');
+    }
+    else {
+      this.$router.replace('/');
+    }
   },
 
   methods: {

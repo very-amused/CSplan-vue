@@ -12,6 +12,7 @@
 </template>
 
 <script>
+import { mapState } from 'vuex';
 import registrationForm from '~/components/register/registrationForm';
 import personalizationForm from '~/components/register/personalizationForm';
 export default {
@@ -38,6 +39,18 @@ export default {
         }
       }
     };
+  },
+
+  computed: {
+    ...mapState({
+      isLoggedIn: state => state.user.isLoggedIn
+    })
+  },
+
+  mounted () {
+    if (this.isLoggedIn) {
+      this.$router.replace('/');
+    }
   },
 
   methods: {

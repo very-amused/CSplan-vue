@@ -14,6 +14,7 @@ div
 </template>
 
 <script>
+import { mapState } from 'vuex';
 import tabs from '~/components/todos/tabs';
 import addListForm from '~/components/todos/addListForm';
 export default {
@@ -29,13 +30,14 @@ export default {
   },
 
   computed: {
-    isEmpty () {
-      return !this.$store.state.todos.length;
-    }
+    ...mapState({
+      isEmpty: state => !state.todos.length,
+      isLoggedIn: state => state.user.isLoggedIn
+    })
   },
 
   async mounted () {
-    if (this.$store.state.user.isLoggedIn) {
+    if (this.isLoggedIn) {
       await this.$store.dispatch('todos/getLists');
     }
     else {

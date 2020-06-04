@@ -4,10 +4,23 @@ div(class="container")
 </template>
 
 <script>
+import { mapState } from 'vuex';
 import loginForm from '~/components/login/loginForm';
 export default {
   components: {
     loginForm
+  },
+
+  computed: {
+    ...mapState({
+      isLoggedIn: state => state.user.isLoggedIn
+    })
+  },
+
+  mounted () {
+    if (this.isLoggedIn) {
+      this.$router.replace('/');
+    }
   }
 };
 </script>
@@ -18,6 +31,6 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 60vh;
+  height: 85vh;
 }
 </style>

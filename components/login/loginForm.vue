@@ -49,6 +49,9 @@ export default {
             this.error.message = body.detail;
           }
         });
+      if (!this.error.message) {
+        this.$router.push('/');
+      }
     }
   }
 };

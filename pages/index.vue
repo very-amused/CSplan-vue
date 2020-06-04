@@ -9,14 +9,14 @@ div(class="main" @mousewheel.prevent="onScroll($event)" :style="`--navbar-height
 
   section(v-if="!showOutline" class="startbutton")
     b-button(@click="showOutline = true" rounded type="is-info" size="is-medium") Why CSplan?
-    b-button(rounded type="is-primary" size="is-medium" tag="nuxt-link" to="/account/register") Create an Account
+    b-button(v-if="!isLoggedIn" rounded type="is-primary" size="is-medium" tag="nuxt-link" to="/account/register") Create an Account
   div(v-else class="slides" :class="{show: showOutline}")
     div(class="card")
       div(class="card-header")
         header(class="title card-header-title") {{ slides[activeSlide].title }}
       div(class="card-content")
         div(v-html="marked(slides[activeSlide].description)" class="content")
-    b-button(type="is-primary" class="action-prompt" tag="nuxt-link" to="/account/register") Create an Account
+    b-button(v-if="!isLoggedIn" type="is-primary" class="action-prompt" tag="nuxt-link" to="/account/register") Create an Account
 
   footer(class="footer" v-if="showOutline")
     b-button(@click="showOutline = false" icon-left="arrow-left" type="is-text")
@@ -26,6 +26,7 @@ div(class="main" @mousewheel.prevent="onScroll($event)" :style="`--navbar-height
 </template>
 
 <script>
+import { mapState } from 'vuex';
 import marked from 'marked';
 export default {
   data () {
@@ -36,6 +37,12 @@ export default {
       navbarHeight: 0,
       slides: []
     };
+  },
+
+  computed: {
+    ...mapState({
+      isLoggedIn: state => state.user.isLoggedIn
+    })
   },
 
   async mounted () {

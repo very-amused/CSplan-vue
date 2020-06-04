@@ -79,7 +79,7 @@ export const actions = {
   async register ({ commit, dispatch }, body) {
     const response = await this.$axios({
       method: 'POST',
-      url: '/v1/register',
+      url: '/v0/register',
       data: {
         data: {
           type: 'user',
@@ -102,7 +102,7 @@ export const actions = {
   async login ({ commit, state }, body) {
     const { data } = await this.$axios({
       method: 'POST',
-      url: '/v1/login',
+      url: '/v0/login',
       data: {
         data: {
           type: 'user',
@@ -137,7 +137,7 @@ export const actions = {
   async logout ({ dispatch }) {
     await this.$axios({
       method: 'POST',
-      url: '/v1/account/logout'
+      url: '/v0/account/logout'
     });
 
     await dispatch('reset');
@@ -161,7 +161,7 @@ export const actions = {
     // Store the generated keypair in the API
     await this.$axios({
       method: 'POST',
-      url: '/v1/account/keys',
+      url: '/v0/account/keys',
       data: {
         data: {
           type: 'key-data',
@@ -203,7 +203,7 @@ export const actions = {
 
     const response = await this.$axios({
       method: 'PATCH',
-      url: '/v1/account/name',
+      url: '/v0/account/name',
       data: {
         data: {
           type: 'user-name',
@@ -227,7 +227,7 @@ export const actions = {
   async updateName ({ commit, state }) {
     const response = await this.$axios({
       method: 'GET',
-      url: '/v1/account/name'
+      url: '/v0/account/name'
     });
     const checksum = response.data.data.meta.checksum;
     const user = await this.$dexie.user.get(state.id);
@@ -253,7 +253,7 @@ export const actions = {
       try {
         await this.$axios({
           method: 'GET',
-          url: '/v1/account/whoami'
+          url: '/v0/account/whoami'
         });
       }
       catch {

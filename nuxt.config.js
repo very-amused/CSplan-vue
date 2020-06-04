@@ -27,11 +27,14 @@ export default {
   ** Global CSS
   */
   css: [
+    { src: '~/node_modules/@mdi/font/css/materialdesignicons.min.css', lang: 'css' },
+    { src: '~/assets/scss/buefy.scss', lang: 'scss' }
   ],
   /*
   ** Plugins to load before mounting the App
   */
   plugins: [
+    { src: '~/plugins/buefy' },
     { src: '~/plugins/dexie', mode: 'client' },
     { src: '~/plugins/user', mode: 'client' }
   ],
@@ -49,7 +52,8 @@ export default {
     // Doc: https://axios.nuxtjs.org/usage
     '@nuxtjs/axios',
     '@nuxtjs/proxy',
-    'nuxt-buefy'
+    'nuxt-purgecss',
+    'nuxt-compress'
   ],
   /*
   ** Axios module configuration
@@ -62,7 +66,7 @@ export default {
   ** See https://github.com/nuxt-community/proxy-module
   */
   proxy: {
-    '/v1': 'http://localhost:3000'
+    '/v0': 'http://localhost:3000'
   },
   /*
   ** Build configuration

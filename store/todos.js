@@ -57,7 +57,7 @@ export const actions = {
   async getLists ({ commit, state, rootState }) {
     const response = await this.$axios({
       method: 'GET',
-      url: '/v1/todos'
+      url: '/v0/todos'
     });
     const data = response.data.data;
     const todos = await this.$dexie.todos.toArray();
@@ -68,7 +68,7 @@ export const actions = {
           // Delete any todo list without a corresponding cryptokey
           await this.$axios({
             method: 'DELETE',
-            url: `/v1/todos/${todo.id}`
+            url: `/v0/todos/${todo.id}`
           });
           return;
         }
@@ -118,7 +118,7 @@ export const actions = {
 
     const { data } = await this.$axios({
       method: 'POST',
-      url: '/v1/todos',
+      url: '/v0/todos',
       data: {
         data: {
           type: 'todo-list',
@@ -150,7 +150,7 @@ export const actions = {
   async removeList ({ commit }, id) {
     await this.$axios({
       method: 'DELETE',
-      url: `/v1/todos/${id}`
+      url: `/v0/todos/${id}`
     });
 
     await this.$dexie.todos.delete(id);
@@ -228,7 +228,7 @@ export const actions = {
     const encrypted = await deepEncrypt(todo, state[index].cryptoKey);
     const response = await this.$axios({
       method: 'PATCH',
-      url: `/v1/todos/${id}`,
+      url: `/v0/todos/${id}`,
       data: {
         data: {
           type: 'todo-list',

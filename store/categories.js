@@ -24,7 +24,7 @@ export const actions = {
   async getCategories ({ commit, state, rootState }) {
     const response = await this.$axios({
       method: 'GET',
-      url: '/v1/categories/ids'
+      url: '/v0/categories/ids'
     });
     const data = response.data.data;
     const categories = await this.$dexie.categories.toArray();
@@ -34,14 +34,14 @@ export const actions = {
       category.checksum === identifier.meta.checksum)) {
         const response = await this.$axios({
           method: 'GET',
-          url: `/v1/categories/${identifier.id}`
+          url: `/v0/categories/${identifier.id}`
         });
         const doc = response.data.data;
 
         if (!doc.meta.cryptoKey) {
           await this.$axios({
             method: 'DELETE',
-            url: `/v1/categories/${identifier.id}`
+            url: `/v0/categories/${identifier.id}`
           });
           return;
         }
@@ -83,7 +83,7 @@ export const actions = {
     const encrypted = await deepEncrypt(body, usable.symmetricKey);
     const response = await this.$axios({
       method: 'POST',
-      url: '/v1/categories',
+      url: '/v0/categories',
       data: {
         data: {
           type: 'category',
@@ -116,7 +116,7 @@ export const actions = {
     const encrypted = await encrypt(title, state[index].cryptoKey);
     await this.$axios({
       method: 'PATCH',
-      url: `/v1/categories/${state[index].id}`,
+      url: `/v0/categories/${state[index].id}`,
       data: {
         data: {
           type: 'category',
@@ -141,7 +141,7 @@ export const actions = {
     const encrypted = await encrypt(state[index].color.hex, state[index].cryptoKey);
     await this.$axios({
       method: 'PATCH',
-      url: `/v1/categories/${id}`,
+      url: `/v0/categories/${id}`,
       data: {
         data: {
           type: 'category',
@@ -161,7 +161,7 @@ export const actions = {
     await this.$dexie.categories.delete(id);
     await this.$axios({
       method: 'DELETE',
-      url: `/v1/categories/${id}`
+      url: `/v0/categories/${id}`
     });
   }
 };

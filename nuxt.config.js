@@ -16,7 +16,9 @@ export default {
       { name: 'viewport', content: 'width=device-width, initial-scale=1' }
     ],
     link: [
-      { rel: 'icon', href: '/img/logo/profile.png' }
+      { rel: 'icon', href: '/img/logo/profile.png' },
+      // MDI CDN
+      { rel: 'stylesheet', href: 'https://materialdesignicons.com/cdn/4.5.95/css/materialdesignicons.min.css' }
     ]
   },
   /*
@@ -27,7 +29,6 @@ export default {
   ** Global CSS
   */
   css: [
-    { src: '~/node_modules/@mdi/font/css/materialdesignicons.min.css', lang: 'css' },
     { src: '~/assets/scss/buefy.scss', lang: 'scss' }
   ],
   /*
@@ -52,7 +53,6 @@ export default {
     // Doc: https://axios.nuxtjs.org/usage
     '@nuxtjs/axios',
     '@nuxtjs/proxy',
-    'nuxt-purgecss',
     'nuxt-compress'
   ],
   /*

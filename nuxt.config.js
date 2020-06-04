@@ -1,3 +1,4 @@
+const isDev = process.env.NODE_ENV === 'development';
 export default {
   mode: 'spa',
   /*
@@ -66,7 +67,7 @@ export default {
   ** See https://github.com/nuxt-community/proxy-module
   */
   proxy: {
-    '/v0': 'http://localhost:3000'
+    '/v0': isDev ? 'localhost:3000' : 'https://api.csplan.co'
   },
   /*
   ** Build configuration

@@ -9,7 +9,8 @@ import {
   Field,
   Input,
   Tabs,
-  Tag
+  Tag,
+  Steps
 } from 'buefy';
 
 Vue.use(Navbar);
@@ -22,3 +23,4 @@ Vue.use(Field);
 Vue.use(Input);
 Vue.use(Tabs);
 Vue.use(Tag);
+Vue.use(Steps);

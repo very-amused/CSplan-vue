@@ -5,4 +5,5 @@ $info: #8143D1;
 // Import Bulma styles
 @import '~bulma';
 // Import ONLY the buefy styles we want (prefer Bulma defaults)
-@import '~buefy/src/scss/components/_dialog'
+@import '~buefy/src/scss/components/_dialog';
+@import '~buefy/src/scss/components/_steps';

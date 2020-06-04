@@ -118,9 +118,12 @@ export const actions = {
     const keydata = data.data.relationships.keys.data.attributes;
     await this.$dexie.user.put({ id, email: body.email });
     await this.$dexie.settings.put({ id });
-    const keys = await unwrapMasterKeypair(body.password, keydata);
+    let keys = {};
+    if (Object.keys(keydata).length) {
+      keys = await unwrapMasterKeypair(body.password, keydata);
+    }
     await this.$dexie.user.update(id, {
-      keys: keys.usable,
+      keys,
       CSRFtoken: data.data.attributes.CSRFtoken
     });
     // Set CSRF token

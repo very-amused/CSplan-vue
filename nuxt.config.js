@@ -60,15 +60,20 @@ export default {
   ** Axios module configuration
   ** See https://axios.nuxtjs.org/options
   */
-  axios: {
-  },
+  axios: !isDev ? {
+    baseUrl: 'https://api.csplan.co'
+  }
+    // Disable baseURL in development
+    : {},
   /*
   ** Proxy module configuration
   ** See https://github.com/nuxt-community/proxy-module
   */
-  proxy: {
-    '/v0': isDev ? 'localhost:3000' : 'https://api.csplan.co'
-  },
+  proxy: isDev ? {
+    '/v0': 'http://localhost:3000'
+  }
+    // Disable proxy in production
+    : {},
   /*
   ** Build configuration
   */

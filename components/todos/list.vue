@@ -27,6 +27,7 @@ div(class="card" :id="`list-${this.id}`")
         //- Category chooser
         b-dropdown(v-if="item.editable" @active-change="updateCategory(index, $event)" @input="updateCategory($event, index)")
           b-button(slot="trigger" class="color-picker-trigger" :style="categoryByID(item.category.id) ? `background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(item.category.id)}` : ''") {{ categoryByID(item.category.id) && categoryByID(item.category.id).title || 'No Category' }}
+          b-dropdown-item(:value="{id: null}") No Category
           b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
         b-tag(v-if="!item.editable && categoryByID(item.category.id)" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${getForegroundColor(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
 
@@ -61,6 +62,7 @@ div(class="card" :id="`list-${this.id}`")
 </template>
 
 <script>
+import { DialogProgrammatic as Dialog } from 'buefy';
 import marked from 'marked';
 import dpurify from 'dompurify';
 import { mapActions } from 'vuex';
@@ -195,7 +197,7 @@ export default {
       return fgselect(color);
     },
     openDeleteDialog () {
-      this.$buefy.dialog.confirm({
+      Dialog.confirm({
         message: 'Are you sure you want to delete this todo list?',
         confirmText: 'Sure',
         type: 'is-danger',
@@ -279,7 +281,7 @@ export default {
       });
     },
     updateCategory (evt, index) {
-      if (!evt.id) {
+      if (evt.id === undefined) {
         return;
       }
       this.$store.dispatch('todos/updateCategory', {

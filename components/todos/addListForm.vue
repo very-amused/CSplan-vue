@@ -15,7 +15,8 @@
                 b-field(grouped custom-class="hide")
                   b-input(v-model="itemFields.title" id="itemFieldTitle" placeholder="Title" expanded)
                   b-dropdown(v-model="itemFields.category")
-                    b-button(slot="trigger" :style="`background-color: ${categoryByID(itemFields.category.id)? categoryByID(itemFields.category.id).color.hex : '#FFFFFF'}`") {{ itemFields.category.title || 'No Category' }}
+                    b-button(slot="trigger" :style="`background-color: ${categoryByID(itemFields.category.id)? categoryByID(itemFields.category.id).color.hex : '#FFFFFF'}; color: ${categoryByID(itemFields.category.id) ? fgselect(categoryByID(itemFields.category.id).color.hex)  : ''}`") {{ itemFields.category.title || 'No Category' }}
+                    b-dropdown-item(:value="{id: null}") No Category
                     b-dropdown-item(v-for="category in categories" :key="category.id" :value="category") {{ category.title }}
                 b-field(style="margin-bottom: 0")
                   b-input(v-model="itemFields.description" type="textarea" maxlength=2000 placeholder="Description (optional)")
@@ -24,10 +25,10 @@
                     b-icon(icon="plus")
 
         //- List of items
-        div(class="column")
-          b-taglist(v-for="(item, index) in items" :key="index" class="item-tags")
-            b-tag(size="is-medium" :title="item.title") {{ item.title }}
-            b-tag(v-if="item.category.id" size="is-small" :style="`background-color: ${categoryByID(item.category.id).color.hex}`") {{ categoryByID(item.category.id).title }}
+        div(class="column items-list")
+          div(v-for="(item, index) in items" :key="index" class="media")
+            p {{ item.title }}
+            b-tag(v-if="categoryByID(item.category.id)" class="item-tag" :style="`background-color: ${categoryByID(item.category.id).color.hex}; color: ${fgselect(categoryByID(item.category.id).color.hex)}`") {{ categoryByID(item.category.id).title }}
 
         //- Submit button
         div(id="submitButtonContainer")
@@ -36,6 +37,7 @@
 </template>
 
 <script>
+import fgselect from '~/assets/js/fgselect';
 export default {
   data () {
     return {
@@ -61,6 +63,9 @@ export default {
   },
 
   methods: {
+    fgselect (hex) {
+      return fgselect(hex);
+    },
     addItem () {
       // Smooth out some HTML validation behavior
       if (!this.itemFields.title.length) {
@@ -152,13 +157,12 @@ $field-margin: 0.75rem/2;
   margin-left: 0.5rem;
 }
 
-/* Handle tag title overflow */
-.tag span {
-  max-width: 10rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.item-tag {
+  margin: 0 0.5rem;
 }
-.item-tags {
-  margin-bottom: 0;
+
+.items-list {
+  height: 15rem;
+  overflow: auto;
 }
 </style>
